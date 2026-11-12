@@ -2,6 +2,11 @@ from croniter import croniter
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from app.core.validation import (
+    normalize_port_range,
+    normalize_scan_config,
+    normalize_target,
+)
 from app.models.scan import ScanType, ScanStatus, PortState
 
 
@@ -21,19 +26,13 @@ class ScanCreate(BaseModel):
     
     @validator("target")
     def validate_target(cls, v):
-        """Validate target format"""
-        if not v or len(v.strip()) == 0:
-            raise ValueError("Target cannot be empty")
-        # Basic validation - could be enhanced with IP/CIDR validation
-        return v.strip()
+        """Validate and normalize IP/CIDR/range/hostname targets."""
+        return normalize_target(v)
     
     @validator("port_range")
     def validate_port_range(cls, v):
-        """Validate port range format"""
-        if v is None:
-            return v
-        # Basic validation - could be enhanced with proper port range parsing
-        return v.strip()
+        """Validate and normalize port lists/ranges."""
+        return normalize_port_range(v)
 
 
 class ScanUpdate(BaseModel):
@@ -132,6 +131,11 @@ class ScheduleCreate(BaseModel):
     cron_expression: str = Field(..., description="Cron expression for scheduling")
     enabled: bool = Field(default=True)
     
+    @validator("scan_config")
+    def validate_config(cls, v):
+        """Validate target, ports and scan type before persisting."""
+        return normalize_scan_config(v)
+
     @validator("cron_expression")
     def validate_cron(cls, v):
         """Validate a standard 5-field cron expression"""
@@ -148,6 +152,13 @@ class ScheduleUpdate(BaseModel):
     scan_config: Optional[Dict[str, Any]] = None
     cron_expression: Optional[str] = None
     enabled: Optional[bool] = None
+
+    @validator("scan_config")
+    def validate_config(cls, v):
+        """Validate an optional scan config update."""
+        if v is None:
+            return v
+        return normalize_scan_config(v)
 
     @validator("cron_expression")
     def validate_cron(cls, v):

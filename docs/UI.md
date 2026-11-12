@@ -65,6 +65,7 @@ Etiquetas: `formatStatusLabel()` (uppercase, `_` → espacio).
 3. Detalle: resumen de operación, progreso en vivo, cancelación (`PATCH status=cancelled`), hosts/puertos y estados vacíos.
 4. Cierre de WS: sin reconexión ante cierre intencional o estado terminal; refresco final para obtener resultados persistidos.
 5. Schedules (`/schedules`): listado con configuración/cron/estado/contadores, creación y edición con validación local de cron y target, habilitar/deshabilitar y borrado con confirmación; horas en UTC y aviso de despacho por Beat cada 60 s.
+6. Resultados (`/results`): selector de scan, tabla plana host/puerto, búsqueda libre y filtros por estado/protocolo/servicio, contadores de hosts y puertos, y export JSON/CSV/XML con nombre `scan-<id>-<YYYYMMDD>.<formato>`.
 
 ## 6. Accesibilidad y contraste
 
@@ -83,4 +84,4 @@ npm run build
 npx vitest run
 ```
 
-Cobertura actual de UI/utilidades: clasificación de estados, colores, duración, mapeo WS→Scan, validación de target/puertos, errores de API y validación/formateo de schedules (41 pruebas).
+Cobertura actual de UI/utilidades: clasificación de estados, colores, duración, mapeo WS→Scan, validación de target/puertos, errores de API, validación/formateo de schedules y filtros/export de resultados (52 pruebas).

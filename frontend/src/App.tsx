@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import Dashboard from './components/Dashboard/Dashboard';
 import ScanDetails from './components/ScanDetails/ScanDetails';
 import Schedules from './components/Schedules/Schedules';
+import ResultsBrowser from './components/Results/ResultsBrowser';
 
 function App() {
   return (
@@ -10,7 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/scan/:id" element={<ScanDetails />} />
-        <Route path="/results" element={<div>Results Browser (Coming Soon)</div>} />
+        <Route path="/results" element={<ResultsBrowser />} />
         <Route path="/schedules" element={<Schedules />} />
         <Route path="/settings" element={<div>Settings (Coming Soon)</div>} />
       </Routes>

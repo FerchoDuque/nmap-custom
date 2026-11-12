@@ -21,6 +21,7 @@ import {
   Add as AddIcon,
   Terminal as TerminalIcon,
   Schedule as ScheduleIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { useScanStore } from '@/store/scanStore';
 import { scanApi } from '@/services/api';
@@ -279,6 +280,14 @@ function Dashboard() {
               sx={{ mr: 2 }}
             >
               Schedules
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<SearchIcon />}
+              onClick={() => navigate('/results')}
+              sx={{ mr: 2 }}
+            >
+              Results
             </Button>
             <Button
               variant="outlined"

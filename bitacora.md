@@ -29,6 +29,61 @@
 
 ---
 
+## 2026-11-12 — Backend/Security (PLAN-031: validación estricta de entradas)
+
+- **Objetivo (Plan ID):** PLAN-031 (slice de validación de targets/puertos/config).
+- **Contexto/insumos:** `ScanCreate` solo comprobaba target no vacío y `port_range` se limitaba a `strip()`; `scan_config` de schedules se validaba recién en el despacho. El motor ya soportaba IP/CIDR/rango/hostname.
+- **Acciones realizadas:**
+  - **TDD núcleo:** `tests/core/test_validation.py` en rojo y luego `app/core/validation.py`: `normalize_target` (IPv4/IPv6, CIDR, rango IPv4 con misma familia y orden, hostname sintáctico sin DNS), `normalize_port_range` (listas/rangos, 1–65535, orden, tokens vacíos) y `normalize_scan_config` (target/puertos/`scan_type`, preserva claves extra). **40 pruebas**.
+  - **Schemas:** `ScanCreate` usa los normalizadores (target/rango); `ScheduleCreate` y `ScheduleUpdate` validan y normalizan `scan_config`.
+  - **API:** nuevo `tests/api/test_input_validation.py` (**22 pruebas**): `422` para targets/puertos/config inválidos, aceptación de IPv4/hostname con guion/IPv6/rango IPv4 y normalización de espacios.
+  - **Contrato:** §3.1 documenta formatos aceptados, límites y rechazo `422`; §6 añade las nuevas suites.
+- **Archivos tocados:**
+  - `backend/app/core/validation.py` (nuevo)
+  - `backend/app/schemas/scan.py`
+  - `backend/tests/core/test_validation.py`, `backend/tests/api/test_input_validation.py` (nuevos)
+  - `docs/CONTRACT.md`, `plan.md`, `bitacora.md`
+- **Verificación:**
+  - `pytest tests/core/test_validation.py` → **40 passed**.
+  - `pytest tests/api/test_input_validation.py` → **22 passed**.
+  - `pytest tests/api tests/core` → **144 passed** (39 s).
+  - Sin escaneos ni resoluciones DNS reales (validación sintáctica), conforme a DEC-004.
+- **Hallazgos / riesgos / deuda:**
+  - La UI todavía no ofrece rangos IPv4 (`a-b`) aunque la API los acepta; documentado para alinear en PLAN-021/031.
+  - Faltan por endurecer límites de recursos (p. ej. tamaño máximo de CIDR/rango, concurrencia), revisión de CORS/capacidades y chequeo de secretos.
+  - `name`/`description` de schedules no tienen límite explícito en `ScheduleUpdate`.
+- **Decisiones:** ninguna nueva; DEC-004/010 vigentes.
+- **Siguiente paso:** completar PLAN-031 (límites, CORS/capacidades, secretos), alinear validación de rangos en UI y continuar con PLAN-041.
+
+## 2026-11-12 — Frontend (PLAN-022: navegador de resultados, filtros y export)
+
+- **Objetivo (Plan ID):** PLAN-022 (resultados, filtros, visualización y export en UI).
+- **Contexto/insumos:** `/results` era “Coming Soon”; el backend ya expone `GET /api/scans/{id}` con `results/ports` y `POST /api/scans/{id}/export` (`json`/`csv`/`xml`, cubierto por contrato).
+- **Acciones realizadas:**
+  - **TDD utilidades:** `utils/results.test.ts` primero en rojo (módulo inexistente) y luego `utils/results.ts`: aplanado `ScanResult[]`→filas por puerto, filtros combinables (texto, estado, protocolo, servicio), opciones únicas ordenadas, conteo de hosts y nombre de export determinista (`scan-<id>-<YYYYMMDD>.<fmt>`). **11 pruebas**.
+  - **Pantalla `/results`:** selector de scan (preselecciona el último completado con puertos), tabla host/puerto con chips de estado, búsqueda libre y filtros por estado/protocolo/servicio, contadores `HOSTS`/`PORTS`, limpieza de filtros y estados de carga/vacío/error; aviso si el scan sigue activo.
+  - **Export:** botones JSON/CSV/XML que descargan el blob de la API con nombre determinista y manejo de error; deshabilitados sin resultados.
+  - **Navegación:** ruta real en `App.tsx` y botón “Results” en la cabecera del Dashboard.
+  - **Docs:** flujo y cobertura actualizados en `docs/UI.md`.
+- **Archivos tocados:**
+  - `frontend/src/utils/results.ts`, `frontend/src/utils/results.test.ts` (nuevos)
+  - `frontend/src/components/Results/ResultsBrowser.tsx` (nuevo)
+  - `frontend/src/App.tsx`, `frontend/src/components/Dashboard/Dashboard.tsx`
+  - `docs/UI.md`, `plan.md`, `bitacora.md`
+- **Verificación:**
+  - `npx vitest run src/utils/results.test.ts` → **11 passed** (tras rojo inicial).
+  - `npm run lint` → **OK (0 warnings)**.
+  - `npx tsc --noEmit` → **OK** (corregidos literales de `PortState` en tests).
+  - `npx vitest run` → **52 passed** (6 archivos).
+  - `npm run build` → **OK**; aviso de chunk principal ~529 kB (deuda de code-splitting).
+  - Backend sin cambios en esta iteración (última suite: 82 passed).
+- **Hallazgos / riesgos / deuda:**
+  - No hay pruebas de componentes DOM (jsdom/testing-library no instalados); la lógica se cubre con utilidades puras y el render se validó vía `tsc`/build.
+  - Export probado a nivel de contrato backend y de nombre/descarga en UI, sin e2e real.
+  - El bundle principal creció; considerar `React.lazy`/`manualChunks`.
+- **Decisiones:** ninguna nueva; DEC-006/008/009/010 vigentes.
+- **Siguiente paso:** validación funcional de PLAN-021 y de `/results` con backend real en entorno controlado; luego PLAN-031 (hardening) y PLAN-041 (pipeline).
+
 ## 2026-11-11 — Frontend (PLAN-023 fase 3: UI de schedules)
 
 - **Objetivo (Plan ID):** PLAN-023 fase 3 (cerrar flujo de schedules en UI).
