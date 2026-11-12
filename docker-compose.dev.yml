@@ -1,0 +1,142 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: scanner-db-dev
+    environment:
+      POSTGRES_USER: scanner
+      POSTGRES_PASSWORD: scanner123
+      POSTGRES_DB: network_scanner
+    ports:
+      - "5432:5432"  # Expose for debugging
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    networks:
+      - scanner-network
+
+  # Redis Cache & Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: scanner-redis-dev
+    ports:
+      - "6379:6379"  # Expose for debugging
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - scanner-network
+
+  # FastAPI Backend (Development)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: scanner-backend-dev
+    environment:
+      - ENV=development
+      - DATABASE_URL=postgresql://scanner:scanner123@db:5432/network_scanner
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_RELOAD=true
+      - CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000", "http://localhost"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app:ro  # Mount source for hot reload
+    depends_on:
+      - db
+      - redis
+    networks:
+      - scanner-network
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # Celery Worker (Development)
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: scanner-celery-dev
+    environment:
+      - ENV=development
+      - DATABASE_URL=postgresql://scanner:scanner123@db:5432/network_scanner
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./backend/app:/app/app:ro
+    depends_on:
+      - db
+      - redis
+    networks:
+      - scanner-network
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=debug", "--pool=solo"]
+
+  # Celery Beat (Development, scheduler only: no scan privileges)
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: scanner-beat-dev
+    environment:
+      - ENV=development
+      - DATABASE_URL=postgresql://scanner:scanner123@db:5432/network_scanner
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./backend/app:/app/app:ro
+    depends_on:
+      - db
+      - redis
+    networks:
+      - scanner-network
+    restart: unless-stopped
+    command: ["celery", "-A", "app.celery_app", "beat", "--loglevel=debug"]
+
+  metasploitable:
+    image: tleemcjr/metasploitable2
+    container_name: scanner-metasploitable
+    tty: true
+    stdin_open: true
+    networks:
+      - scanner-network
+
+  # Frontend Development Server (Vite)
+  frontend:
+    image: node:18-alpine
+    container_name: scanner-frontend-dev
+    working_dir: /app
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # Anonymous volume for node_modules
+    networks:
+      - scanner-network
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+networks:
+  scanner-network:
+    driver: bridge
+
+volumes:
+  postgres_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local

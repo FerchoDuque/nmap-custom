@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+env/
+ENV/
+
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
+.vite/
+coverage/
+*.local
+
+# Environment files (keep examples)
+.env
+.env.*
+!.env.example
+!.env.docker
+
+# Logs and runtime data
+*.log
+logs/
+*.sqlite
+*.sqlite3
+*.db
+nmap-results/
+results/
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Electron build output
+electron/dist/
+electron/release/
+
+# Docker
+*.pid
