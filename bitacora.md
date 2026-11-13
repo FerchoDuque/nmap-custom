@@ -29,6 +29,23 @@
 
 ---
 
+## 2026-11-13 — Frontend (deuda PLAN-022: code-splitting del bundle)
+
+- **Objetivo (Plan ID):** PLAN-022 (deuda de rendimiento: bundle principal > 500 kB).
+- **Contexto/insumos:** el build emitía un único `index-*.js` de ~530 kB y el aviso de Vite; todas las rutas se importaban estáticamente.
+- **Acciones realizadas:**
+  - **Rutas lazy:** `ScanDetails`, `ResultsBrowser` y `Schedules` con `React.lazy` + `Suspense` y fallback `> LOADING_MODULE...`; `Dashboard` queda eager por ser la entrada.
+  - **Chunks manuales:** `manualChunks` separa `react`, `react-router`, `mui`, `mui-icons`, `http` (axios), `state` (zustand) y `vendor`.
+- **Archivos tocados:** `frontend/src/App.tsx`, `frontend/vite.config.ts`, `docs/CI.md`, `plan.md`, `bitacora.md`.
+- **Verificación:**
+  - `npm run build` → OK **sin aviso de chunk > 500 kB**; mayor chunk `mui` **241.02 kB** (gzip 72.41), entrada **23.87 kB**, rutas lazy de 6.9–12.3 kB.
+  - `npm run lint` → OK; `npx tsc --noEmit` → OK; `npm run test:run` → **67 passed**.
+- **Hallazgos / riesgos / deuda:**
+  - `recharts`/`d3`/`@tanstack/react-table` siguen como dependencias sin uso; candidatos a retirar si no se usan en visualizaciones futuras.
+  - El fallback de suspensión es básico; suficiente para el baseline.
+- **Decisiones:** ninguna nueva; ajuste de build alineado con DEC-009 (UI) sin cambiar contrato.
+- **Siguiente paso:** PLAN-040 (observabilidad) y validación de disparo real de schedules (PLAN-023) en entorno autorizado.
+
 ## 2026-11-13 — Frontend/QA (PLAN-021: validación funcional con pruebas de componentes)
 
 - **Objetivo (Plan ID):** PLAN-021 (validación funcional del flujo UI principal sin red real).

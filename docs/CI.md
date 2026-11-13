@@ -42,8 +42,7 @@ No se ejecutan escaneos de red, resolución DNS ni contenedores con capacidades.
 - No hay E2E real de red/WebSocket ni disparo real de Beat: requiere un entorno
   autorizado (DEC-004) y se valida aparte.
 - El job de CI no construye imágenes Docker; para eso usar `make build`/`make build-dev`.
-- El build de frontend puede mostrar el aviso de chunk > 500 kB; es deuda conocida
-  (code-splitting pendiente), no un fallo.
+- **El bundle usa code-splitting** (rutas lazy y chunks de vendor); el mayor chunk actual es ~241 kB. Si reaparece el aviso >500 kB, revisar imports estáticos pesados.
 - La primera ejecución local requiere dependencias instaladas (`pip install -r
   backend/requirements.txt`, `npm ci`).
 
