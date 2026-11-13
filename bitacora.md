@@ -29,6 +29,32 @@
 
 ---
 
+## 2026-11-13 — Frontend/QA (PLAN-021: validación funcional con pruebas de componentes)
+
+- **Objetivo (Plan ID):** PLAN-021 (validación funcional del flujo UI principal sin red real).
+- **Contexto/insumos:** el flujo estaba implementado y cubierto por utilidades puras, pero no había pruebas DOM; no se podía verificar creación, progreso WS ni cancelación a nivel de componente sin un backend real.
+- **Acciones realizadas:**
+  - **Harness DOM:** instalados `jsdom` 24 (fijado por compatibilidad con Vitest 1.6/Node 22), `@testing-library/react`, `@testing-library/user-event` y `@testing-library/jest-dom` 6; entorno `jsdom` por archivo (`// @vitest-environment jsdom`) y `cleanup` explícito.
+  - **`ScanDialog` (5 pruebas):** target inválido bloquea envío; target requerido; límite de 1024 hosts; envío con valores del formulario y cierre; error de API mantiene el diálogo abierto y reactiva el botón.
+  - **`ScanDetails` (4 pruebas):** carga y conexión WS; aplicación de progreso/host desde `update`; estado terminal recarga resultados, desconecta y oculta cancelar; cancelación llama `PATCH {status: cancelled}` y recarga.
+  - **`Dashboard` (3 pruebas):** listado de scans recientes, estado vacío y creación desde el diálogo con recarga de la lista.
+  - **TDD de validación:** test rojo para el límite total de puertos (`1-40000,1-40000`) y ajuste de `validatePortRange` con `MAX_PORTS_PER_SCAN=65535`, alineado con backend.
+- **Archivos tocados:**
+  - `frontend/src/components/ScanDialog.test.tsx`, `frontend/src/components/Dashboard/Dashboard.test.tsx`, `frontend/src/components/ScanDetails/ScanDetails.test.tsx` (nuevos)
+  - `frontend/src/utils/validation.ts`, `frontend/src/utils/validation.test.ts`
+  - `frontend/package.json`, `frontend/package-lock.json`
+  - `docs/UI.md`, `docs/CI.md`, `plan.md`, `bitacora.md`
+- **Verificación:**
+  - `npx vitest run` → **67 passed** (8 archivos; incluye 12 pruebas DOM).
+  - `npm run lint` → OK; `npx tsc --noEmit` → OK; `npm run build` → OK (aviso de bundle ~530 kB).
+  - API y WebSocket mockeados; sin red, DNS ni backend real (DEC-004/010).
+- **Hallazgos / riesgos / deuda:**
+  - Las pruebas de componentes añaden ~15 s al pipeline (colecta de MUI/jsdom), pero son deterministas.
+  - La validación E2E con backend real sigue pendiente y requiere entorno autorizado.
+  - `jsdom` se fijó en 24.1.3: jsdom 31 fallaba al cargar `undici` en este entorno (Node 22.13/Vitest 1.6).
+- **Decisiones:** ninguna nueva; DEC-010 aplicada (mocks/fixtures, sin red real).
+- **Siguiente paso:** code-splitting del bundle (deuda PLAN-022), validación de disparo real de schedules (PLAN-023) y observabilidad (PLAN-040).
+
 ## 2026-11-13 — Infra/QA (PLAN-041: pipeline reproducible de calidad)
 
 - **Objetivo (Plan ID):** PLAN-041 (checks automatizados y entorno de verificación reproducible).

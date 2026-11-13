@@ -84,4 +84,4 @@ npm run build
 npx vitest run
 ```
 
-Cobertura actual de UI/utilidades: clasificación de estados, colores, duración, mapeo WS→Scan, validación de target/puertos (IPv4/IPv6/CIDR/rangos y límite de 1024 hosts), errores de API, validación/formateo de schedules y filtros/export de resultados (54 pruebas).
+Cobertura actual de UI/utilidades: clasificación de estados, colores, duración, mapeo WS→Scan, validación de target/puertos (IPv4/IPv6/CIDR/rangos y límites de 1024 hosts/65535 puertos), errores de API, validación/formateo de schedules, filtros/export de resultados y **pruebas de componentes** (`ScanDialog`, `Dashboard`, `ScanDetails`) con jsdom/Testing Library y API/WS mockeados (67 pruebas).

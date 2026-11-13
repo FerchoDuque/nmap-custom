@@ -105,6 +105,8 @@ export function validatePortRange(rawRange?: string | null): string | null {
   const range = (rawRange ?? '').trim();
   if (!range) return null;
 
+  let totalPorts = 0;
+
   for (const rawToken of range.split(',')) {
     const token = rawToken.trim();
     if (!token) return 'Empty port entry';
@@ -120,6 +122,11 @@ export function validatePortRange(rawRange?: string | null): string | null {
     }
     if (end < start) {
       return 'Invalid port range (end before start)';
+    }
+
+    totalPorts += end - start + 1;
+    if (totalPorts > MAX_PORTS_PER_SCAN) {
+      return `Port range exceeds maximum of ${MAX_PORTS_PER_SCAN} ports`;
     }
   }
 

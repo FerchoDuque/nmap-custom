@@ -20,7 +20,7 @@ El mismo conjunto de checks se ejecuta en local y en GitHub Actions.
 | Backend tests | `python -m pytest tests/api tests/core -q` | API, contrato, WS, validación, scheduler |
 | Frontend lint | `npm run lint` | ESLint sin warnings |
 | Frontend typecheck | `npm run typecheck` | `tsc --noEmit` |
-| Frontend tests | `npm run test:run` | Vitest en modo one-shot |
+| Frontend tests | `npm run test:run` | Vitest en modo one-shot (utilidades + componentes con jsdom) |
 | Frontend build | `npm run build` | `tsc` + bundle Vite |
 
 Los tests de backend fijan por defecto `DATABASE_URL=sqlite:///:memory:` en

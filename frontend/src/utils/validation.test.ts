@@ -84,6 +84,13 @@ describe('validatePortRange', () => {
       'Use ports like 22,80,443 or ranges like 1-1000'
     );
   });
+
+  it('accepts the maximum range and rejects lists above the total limit', () => {
+    expect(validatePortRange('1-65535')).toBeNull();
+    expect(validatePortRange('1-40000,1-40000')).toBe(
+      'Port range exceeds maximum of 65535 ports'
+    );
+  });
 });
 
 describe('validateScanForm', () => {
