@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 from app.core.scanner import NetworkScanner, DEFAULT_UDP_PORTS
 from app.models.scan import ScanType, PortState
@@ -8,7 +8,8 @@ from app.models.scan import ScanType, PortState
 @pytest.fixture
 def scanner():
     s = NetworkScanner()
-    # Prevent any real network/service/OS probing; tests control behavior via mocks.
+    # Never perform real network/service/OS probing or reverse DNS in tests.
+    s.resolve_hostnames = False
     s.network_mapper = Mock()
     s.network_mapper.discover_hosts = AsyncMock()
     s.port_scanner = AsyncMock()
@@ -128,7 +129,31 @@ class TestNetworkScannerProtocols:
         assert result == {
             "hosts_total": 1,
             "hosts_up": 0,
+            "hosts_failed": 0,
             "total_ports_found": 0,
             "results": [],
         }
         scanner.port_scanner.tcp_connect_scan.assert_not_called()
+
+
+class TestHostnameResolution:
+    def test_disabled_resolution_skips_dns(self, scanner):
+        with patch("app.core.scanner.socket.gethostbyaddr") as resolve:
+            assert scanner._resolve_hostname("192.168.1.10") is None
+            resolve.assert_not_called()
+
+    def test_dns_failures_are_ignored(self, scanner):
+        scanner.resolve_hostnames = True
+        with patch(
+            "app.core.scanner.socket.gethostbyaddr",
+            side_effect=OSError("dns down"),
+        ):
+            assert scanner._resolve_hostname("192.168.1.10") is None
+
+    def test_resolved_hostname_is_returned(self, scanner):
+        scanner.resolve_hostnames = True
+        with patch(
+            "app.core.scanner.socket.gethostbyaddr",
+            return_value=("router.local", [], ["192.168.1.10"]),
+        ):
+            assert scanner._resolve_hostname("192.168.1.10") == "router.local"

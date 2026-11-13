@@ -1,8 +1,10 @@
 import asyncio
+import socket
 from typing import Dict, List, Optional, Callable, Tuple
 from datetime import datetime
 import logging
 
+from app.config import settings
 from app.core.port_scanner import PortScanner
 from app.core.service_detector import ServiceDetector
 from app.core.os_fingerprint import OSFingerprinter
@@ -18,12 +20,26 @@ DEFAULT_UDP_PORTS = [53, 67, 68, 69, 123, 135, 137, 138, 139, 161, 162, 445, 500
 class NetworkScanner:
     """Main network scanner orchestrator"""
 
-    def __init__(self):
-        """Initialize network scanner with all components"""
+    def __init__(self, resolve_hostnames: Optional[bool] = None):
+        """Initialize network scanner with all components."""
+        self.resolve_hostnames = (
+            settings.resolve_hostnames
+            if resolve_hostnames is None
+            else resolve_hostnames
+        )
         self.port_scanner = PortScanner(timeout=1.0)
         self.service_detector = ServiceDetector(timeout=2.0)
         self.os_fingerprinter = OSFingerprinter()
         self.network_mapper = NetworkMapper()
+
+    def _resolve_hostname(self, host: str) -> Optional[str]:
+        """Best-effort reverse DNS that never raises and can be disabled."""
+        if not self.resolve_hostnames:
+            return None
+        try:
+            return socket.gethostbyaddr(host)[0]
+        except (OSError, UnicodeError):
+            return None
     
     async def scan(
         self,
@@ -71,6 +87,7 @@ class NetworkScanner:
             return {
                 "hosts_total": len(hosts),
                 "hosts_up": 0,
+                "hosts_failed": 0,
                 "total_ports_found": 0,
                 "results": []
             }
@@ -83,6 +100,7 @@ class NetworkScanner:
         # Scan each host
         results = []
         total_ports_found = 0
+        hosts_failed = 0
         
         host_step = 80.0 / len(active_hosts)
         
@@ -99,16 +117,22 @@ class NetworkScanner:
                     "progress": base_progress
                 })
             
-            host_result = await self._scan_host(
-                host,
-                scan_type,
-                ports,
-                service_detection,
-                os_detection,
-                progress_callback,
-                base_progress,
-                host_step
-            )
+            # One failing host must not abort the rest of the scan.
+            try:
+                host_result = await self._scan_host(
+                    host,
+                    scan_type,
+                    ports,
+                    service_detection,
+                    os_detection,
+                    progress_callback,
+                    base_progress,
+                    host_step
+                )
+            except Exception as exc:  # noqa: BLE001 - isolate per-host failures
+                hosts_failed += 1
+                logger.warning("Host scan failed for %s: %s", host, exc)
+                continue
             
             results.append(host_result)
             total_ports_found += len(host_result.get("ports", []))
@@ -123,6 +147,7 @@ class NetworkScanner:
         return {
             "hosts_total": len(hosts),
             "hosts_up": len(active_hosts),
+            "hosts_failed": hosts_failed,
             "total_ports_found": total_ports_found,
             "results": results
         }
@@ -161,12 +186,8 @@ class NetworkScanner:
             "os_details": None,
         }
         
-        # Try to resolve hostname
-        try:
-            import socket
-            result["hostname"] = socket.gethostbyaddr(host)[0]
-        except:
-            pass
+        # Try to resolve hostname (best effort, bounded by the scan timeout)
+        result["hostname"] = self._resolve_hostname(host)
         
         # Perform port scan(s) and collect open ports with protocol preserved
         scan_results_by_protocol: List[Tuple[str, Dict[int, PortState]]] = []

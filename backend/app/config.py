@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     default_scan_timeout: int = 300
     max_ports_per_scan: int = 65535
     max_hosts_per_scan: int = 1024
+    resolve_hostnames: bool = True
     
     # Security
     secret_key: str = DEFAULT_SECRET_KEY

@@ -222,6 +222,25 @@
 
 ---
 
+## DEC-013 — Resiliencia: timeout acotado, idempotencia terminal y errores no sensibles
+- **Fecha:** 2026-11-13
+- **Estado:** accepted
+- **Contexto:** una entrega duplicada de Celery podía reejecutar un scan terminado, un scan colgado no tenía límite de tiempo, un fallo por host abortaba todo el escaneo y los errores internos podían filtrarse al cliente o a la base. Además, el DNS inverso sin control hacía depender los tests de red real.
+- **Decisión:**
+  - Ejecutar cada scan con `asyncio.wait_for` sobre `DEFAULT_SCAN_TIMEOUT` (default `300` s); al excederse, marcarlo `failed` con mensaje acotado y lanzar `ScanTimeoutError`.
+  - No reejecutar scans en estado terminal (`completed`/`failed`/`cancelled`): devolver `{"status": "skipped"}` y emitir `scan.skipped`.
+  - Aislar fallos por host (se omiten y cuentan en `hosts_failed`) para que el resto del scan continúe.
+  - Responder `500 {"detail": "Internal server error"}` en errores no controlados, dejando el traceback solo en logs; truncar mensajes persistidos a 500 caracteres y enmascarar errores de SQLAlchemy.
+  - Hacer configurable el DNS inverso con `RESOLVE_HOSTNAMES` (default `true`) y desactivarlo en las pruebas.
+- **Alternativas consideradas:** reintentos automáticos de la tarea (descartado: reejecuta trabajo y duplica resultados sin presupuesto claro); cancelación cooperativa del motor por socket (fuera de alcance); devolver `str(exc)` siempre (descartado: filtra internos).
+- **Consecuencias:**
+  - (+) Workers no quedan colgados, no hay resultados duplicados, el cliente recibe errores seguros y los tests son deterministas/rápidos.
+  - (-) Un scan que excede el presupuesto se pierde (queda `failed`) y no se reanuda; hosts omitidos requieren reescaneo manual; el timeout no interrumpe un socket bloqueado de inmediato.
+- **Impacto en plan/grafo:** cierra `PLAN-032`; habilita `PLAN-042` (runbooks de fallos) y `PLAN-050` (release).
+- **Verificación:** `tests/core/test_resilience.py` (9) y `tests/api/test_error_handling.py` (3); backend **190 passed** en ~2.4 s sin red real.
+
+---
+
 ## Plantilla para nuevas decisiones
 
 ```md

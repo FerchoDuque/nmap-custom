@@ -17,7 +17,7 @@ Cada registro se emite como **una línea JSON** en `stdout` (formato en
 | `timestamp` | `record.created` | ISO 8601 en UTC |
 | `level`, `logger`, `message` | estándar | `message` ya interpolado |
 | `scan_id`, `task_id` | `ScanLoggerAdapter` | correlación scan ↔ tarea Celery |
-| `event` | `extra` | `scan.started`, `scan.completed`, `scan.failed`, `scan.not_found`, `scan.progress_error` |
+| `event` | `extra` | `scan.started`, `scan.completed`, `scan.failed`, `scan.not_found`, `scan.progress_error`, `scan.timeout`, `scan.skipped`, `scan.persist_error` |
 | `status`, `duration_ms`, `hosts_found`, `ports_found` | `extra` | solo si se informan |
 | `exception` | `exc_info` | traceback completo |
 

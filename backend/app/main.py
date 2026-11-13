@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import logging
 
 from app.config import settings
@@ -35,6 +36,21 @@ app.include_router(scans.router)
 app.include_router(websocket.router)
 app.include_router(schedules.router)
 app.include_router(system.router)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Log the failure and return a generic message (no internals leaked)."""
+    logger.error(
+        "Unhandled error on %s %s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 
 @app.on_event("startup")

@@ -29,6 +29,33 @@
 
 ---
 
+## 2026-11-13 — Backend/QA (PLAN-032: resiliencia, timeouts e idempotencia)
+
+- **Objetivo (Plan ID):** PLAN-032 (degradación controlada, mensajes seguros e idempotencia).
+- **Contexto/insumos:** `perform_scan_task` no tenía timeout ni protección ante entregas duplicadas; un fallo al escanear un host abortaba el scan completo; los errores no controlados devolvían el traceback por defecto de FastAPI; `socket.gethostbyaddr` se ejecutaba sin control y hacía que los tests dependieran de DNS real (~9 s por host).
+- **Acciones realizadas:**
+  - **TDD:** `tests/core/test_resilience.py` (idempotencia, timeout, truncado de errores, persistencia y aislamiento por host) y `tests/api/test_error_handling.py` (`500` genérico, `404`/`422` con detalle), en rojo antes de implementar.
+  - **Runner testeable:** extraído `execute_scan(db, scan_id, task_id, scanner=None, update_state=None, timeout=None)` en `app/tasks.py`; `perform_scan_task` queda como wrapper Celery delgado.
+  - **Timeout:** `asyncio.wait_for` con `settings.default_scan_timeout` (o inyectado), `ScanTimeoutError` y estado `failed` con mensaje `Scan exceeded the configured timeout of Ns`.
+  - **Idempotencia:** scans `completed`/`failed`/`cancelled` no se re-ejecutan (`{"status": "skipped"}`, evento `scan.skipped`); scan inexistente → `not_found`.
+  - **Errores seguros:** `_safe_error_message` trunca a 500 caracteres y enmascara `SQLAlchemyError`; handler global en `main.py` responde `500 {"detail": "Internal server error"}` y loguea el traceback.
+  - **Aislamiento por host:** `NetworkScanner.scan` captura errores por host, loguea, continúa y reporta `hosts_failed`.
+  - **DNS inverso configurable:** `RESOLVE_HOSTNAMES` (default `true`) + `_resolve_hostname` sin excepciones; tests con `resolve_hostnames=False`, eliminando la dependencia de red y bajando la suite de ~73 s a ~2.4 s.
+- **Archivos tocados:**
+  - `backend/app/tasks.py`, `backend/app/main.py`, `backend/app/core/scanner.py`, `backend/app/config.py`, `backend/.env.example`
+  - `backend/tests/core/test_resilience.py` (nuevo), `backend/tests/api/test_error_handling.py` (nuevo), `backend/tests/core/test_scanner.py`
+  - `docs/CONTRACT.md`, `docs/OBSERVABILITY.md`, `README.md`, `plan.md`, `decisions.md`, `bitacora.md`
+- **Verificación:**
+  - `pytest tests/core/test_resilience.py tests/api/test_error_handling.py tests/core/test_scanner.py` → **20 passed** en 0.58 s.
+  - `pytest tests/api tests/core -q` → **190 passed** en **2.39 s** (antes 175 en ~37 s).
+  - Todo con SQLite in-memory, mocks/fakes y sin DNS/red real (DEC-004/010).
+- **Hallazgos / riesgos / deuda:**
+  - El timeout acota también una resolución DNS colgada (dentro del presupuesto del scan), pero no hay cancelación cooperativa del motor a mitad de socket.
+  - No hay reintentos automáticos de la tarea: se prioriza idempotencia y visibilidad (`failed`) sobre reejecución silenciosa.
+  - `hosts_failed` se reporta en resultados y logs, pero no se persiste como columna (no requiere migración).
+- **Decisiones:** DEC-013 (timeout acotado, idempotencia terminal, errores seguros y DNS configurable).
+- **Siguiente paso:** PLAN-042 (runbooks) y PLAN-050 (checklist de release), más validación real de schedules en entorno autorizado.
+
 ## 2026-11-13 — Infra/Backend (PLAN-040: observabilidad, health y métricas)
 
 - **Objetivo (Plan ID):** PLAN-040 (logging estructurado con correlación, health útil y métricas básicas).

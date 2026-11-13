@@ -204,6 +204,11 @@ REDIS_PORT=6379
 CELERY_BROKER_URL=redis://localhost:6379/0
 API_HOST=0.0.0.0
 API_PORT=8000
+# Resource limits and resilience
+MAX_HOSTS_PER_SCAN=1024
+MAX_PORTS_PER_SCAN=65535
+DEFAULT_SCAN_TIMEOUT=300
+RESOLVE_HOSTNAMES=true
 ```
 
 ### Frontend (.env)
@@ -286,6 +291,9 @@ npm run typecheck
 - **Authorization**: Only scan networks you own or have explicit written permission to test. Validation is syntactic and does not replace authorization controls.
 - **Privileges**: SYN scans and OS fingerprinting require root/administrator privileges; run the worker with `NET_RAW`/`NET_ADMIN` only, never privileged mode.
 - **Resource limits**: `MAX_HOSTS_PER_SCAN` (default `1024`) and `MAX_PORTS_PER_SCAN` (default `65535`) cap scan size; oversized CIDR ranges/port lists are rejected with `422` instead of being truncated.
+- **Timeouts**: `DEFAULT_SCAN_TIMEOUT` (default `300` s) bounds each scan; an exceeded scan is marked `failed` with a safe message instead of hanging a worker.
+- **Undisclosed errors**: unhandled exceptions return `{"detail": "Internal server error"}`; details stay in structured logs.
+- **Reverse DNS**: `RESOLVE_HOSTNAMES=false` skips reverse lookups (useful without DNS/for deterministic tests); lookup failures are ignored.
 - **CORS**: `CORS_ORIGINS` must contain explicit origins; `*` and empty lists are rejected at startup.
 - **Secrets**: replace the placeholder `SECRET_KEY` before any non-local deployment. In `ENV=production` the API logs a warning if the default is still in use.
 - **Firewall**: May trigger IDS/IPS systems

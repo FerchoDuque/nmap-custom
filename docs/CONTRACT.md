@@ -131,13 +131,23 @@ Base: `/api/scans`
 
 Formatos no soportados → `422` (validación del schema `ExportRequest`).
 
-### 3.4 Errores
+### 3.4 Errores y resiliencia (PLAN-032)
 
 Formato estándar de FastAPI:
 
 ```json
 { "detail": "Scan 42 not found" }
 ```
+
+Política de errores:
+
+- **`4xx`** conservan detalle accionable (`404` recurso inexistente, `422` validación con campo).
+- **`500` no controlado** → `{ "detail": "Internal server error" }`; el traceback y los detalles internos se registran en el log (`Unhandled error on <METHOD> <path>`) y nunca se devuelven al cliente.
+- **Timeout de escaneo:** la tarea se aborta tras `DEFAULT_SCAN_TIMEOUT` (default `300` s), el scan pasa a `failed` con mensaje `Scan exceeded the configured timeout of Ns` y se emite `scan.timeout`.
+- **Fallos por host:** un error al escanear un host no aborta el resto; se omite, se cuenta en `hosts_failed` y el scan termina con los hosts restantes.
+- **Idempotencia:** una entrega duplicada de la tarea sobre un scan en estado terminal (`completed`/`failed`/`cancelled`) no se re-ejecuta; responde `{"status": "skipped"}` y emite `scan.skipped`.
+- **Mensajes persistidos:** se truncan a 500 caracteres y los errores de base de datos se sustituyen por `Scan failed due to a database error`.
+- **Resolución DNS inversa:** `RESOLVE_HOSTNAMES` (default `true`) permite desactivarla en entornos sin DNS o de baja latencia; los fallos de resolución se ignoran.
 
 ### 3.5 Schedules — `/api/schedules` (DEC-008)
 
@@ -277,5 +287,7 @@ Cobertura de contrato actual:
 - `test_config.py`: CORS explícito (rechazo de `*`/lista vacía), límites positivos y detección del `SECRET_KEY` placeholder.
 - `test_system.py`: `/api/health` saludable y `503` degradado con fallo de DB simulado; `/api/metrics` con conteos por estado, activos y totales (incluida base vacía).
 - `test_logging_utils.py`: campos de correlación en JSON, traceback, tolerancia a `exc_info=True` sin excepción activa, inyección/override de `scan_id`/`task_id` y configuración idempotente por logger.
+- `test_resilience.py`: idempotencia sobre scans terminales, timeout con mensaje no sensible, truncado de errores, persistencia de resultados y aislamiento de fallos por host (`hosts_failed`).
+- `test_error_handling.py`: `500` genérico sin filtrar internos, `404` con detalle y `422` con errores de campo.
 
 Pendiente: validación E2E de WS en un entorno de red autorizado (DEC-004).
