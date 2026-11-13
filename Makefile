@@ -1,4 +1,4 @@
-.PHONY: help build up down logs restart clean shell-backend shell-db shell-redis migrate test
+.PHONY: help build up down logs restart clean shell-backend shell-db shell-redis migrate test check check-backend check-frontend verify
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -69,6 +69,17 @@ test: ## Run tests in backend container
 
 test-cov: ## Run tests with coverage
 	docker-compose exec backend pytest tests/ -v --cov=app --cov-report=term-missing
+
+check-backend: ## Run backend tests locally (SQLite in-memory)
+	cd backend && PYTHONPATH=. DATABASE_URL=sqlite:///:memory: python -m pytest tests/api tests/core -q
+
+check-frontend: ## Run frontend lint, typecheck and unit tests
+	cd frontend && npm run lint && npm run typecheck && npm run test:run
+
+check: check-backend check-frontend ## Run local quality checks (no build)
+
+verify: ## Run full local verification including frontend build
+	bash scripts/verify.sh
 
 ps: ## Show running containers
 	docker-compose ps

@@ -29,6 +29,31 @@
 
 ---
 
+## 2026-11-13 — Infra/QA (PLAN-041: pipeline reproducible de calidad)
+
+- **Objetivo (Plan ID):** PLAN-041 (checks automatizados y entorno de verificación reproducible).
+- **Contexto/insumos:** las suites ya estaban en verde, pero requerían exportar `PYTHONPATH`/`DATABASE_URL` a mano y no había un comando único ni CI; `npm test` quedaba en modo watch.
+- **Acciones realizadas:**
+  - **Scripts de verificación:** `scripts/verify.ps1` (Windows) y `scripts/verify.sh` (Linux/macOS/WSL) ejecutan backend pytest, frontend lint, typecheck, tests one-shot y build; opción `-SkipBuild`/`--skip-build`; fallan con código distinto de cero y mensaje del paso.
+  - **Entorno determinista:** `backend/tests/conftest.py` fija `DATABASE_URL=sqlite:///:memory:` antes de importar la app, de modo que `pytest tests/api tests/core` funciona sin variables externas.
+  - **Scripts npm:** `typecheck` (`tsc --noEmit`) y `test:run` (`vitest run`) para evitar watch mode en CI/scripts.
+  - **Makefile:** `check-backend`, `check-frontend`, `check` (sin build) y `verify` (pipeline completo).
+  - **CI:** `.github/workflows/ci.yml` con jobs backend (Python 3.11, pip cache, SQLite in-memory) y frontend (Node 20, `npm ci`, lint/typecheck/test/build) en push a `main` y PR.
+  - **Docs:** `docs/CI.md` (comandos, pasos, alcance y troubleshooting) y README (quality gate + testing).
+- **Archivos tocados:**
+  - `scripts/verify.ps1`, `scripts/verify.sh`, `.github/workflows/ci.yml`, `docs/CI.md` (nuevos)
+  - `backend/tests/conftest.py`, `frontend/package.json`, `Makefile`, `README.md`, `plan.md`, `bitacora.md`
+- **Verificación:**
+  - `powershell -File scripts/verify.ps1 -SkipBuild` → **All checks passed**.
+  - `powershell -File scripts/verify.ps1` (completo) → **All checks passed**: backend **162 passed**; frontend **54 passed**; `lint`/`typecheck`/`build` OK.
+  - `bash -n scripts/verify.sh` → sintaxis OK (ejecución completa no realizada en Windows).
+- **Hallazgos / riesgos / deuda:**
+  - `npm run test -- --run` se quedó en watch mode en Windows; se sustituyó por `test:run` (`vitest run`) en scripts, Makefile y CI.
+  - El workflow no se ha ejecutado aún en GitHub Actions (requiere push); validado localmente con los mismos comandos.
+  - No se construyen imágenes Docker en CI; permanece como verificación manual (`make build`).
+- **Decisiones:** ninguna nueva; DEC-004/010 aplicadas (sin red real; pipeline determinista).
+- **Siguiente paso:** validación funcional de PLAN-021/PLAN-023 en entorno autorizado, code-splitting de PLAN-022 y observabilidad/runbooks (PLAN-040/042).
+
 ## 2026-11-13 — Backend/Security (PLAN-031: límites, CORS y secretos)
 
 - **Objetivo (Plan ID):** PLAN-031 (cierre: límites de recursos, configuración CORS y manejo de secretos).

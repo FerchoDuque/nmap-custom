@@ -78,6 +78,8 @@ make logs-backend  # View backend logs
 make shell-backend # Access backend shell
 make migrate       # Run database migrations
 make test          # Run tests
+make check         # Local lint/type/tests (no Docker)
+make verify        # Full local checks incl. frontend build
 make down          # Stop all services
 ```
 
@@ -227,6 +229,24 @@ Once the backend is running, visit:
 
 ## 🧪 Testing
 
+### Reproducible checks (recommended)
+
+Run the full quality gate locally (no Docker/network required):
+
+```powershell
+# Windows
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify.ps1
+```
+
+```bash
+# Linux/macOS/WSL
+bash scripts/verify.sh
+```
+
+Add `-SkipBuild`/`--skip-build` to skip the frontend build, or use `make check`
+(no build) / `make verify` (with build). CI runs the same checks; see
+[CI documentation](docs/CI.md).
+
 ### Backend Tests
 ```bash
 cd backend
@@ -236,7 +256,8 @@ pytest tests/ -v --cov=app
 ### Frontend Tests
 ```bash
 cd frontend
-npm run test
+npm run test:run
+npm run typecheck
 ```
 
 ## 🎯 Usage Examples

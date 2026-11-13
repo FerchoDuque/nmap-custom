@@ -1,7 +1,7 @@
 # plan.md — Roadmap y grafo de ejecución
 
 > Estado vivo del trabajo. Se actualiza en cada iteración del loop definido en [`agents.md`](agents.md).
-> Última actualización: 2026-11-13 (PLAN-031 cerrado: validación estricta, límites de recursos, CORS y secretos)
+> Última actualización: 2026-11-13 (PLAN-031 y PLAN-041 cerrados: hardening y pipeline reproducible)
 
 ## 1. Visión y objetivo
 
@@ -103,7 +103,7 @@ graph TD
 | PLAN-031 | Hardening de seguridad y validación de entradas/config | Security/Backend | done | Alta | PLAN-011 | Validación estricta de targets/puertos/opciones, límites de recursos, manejo seguro de capacidades/permisos, CORS/config por entorno, sin secretos expuestos | **Completado:** `core/validation.py` (IP/CIDR/rango/hostname y puertos 1–65535) aplicado a `ScanCreate` y `scan_config`; límites `MAX_HOSTS_PER_SCAN=1024`/`MAX_PORTS_PER_SCAN=65535` con rechazo `422` (sin truncado); CORS exige orígenes explícitos y rechaza `*`; `SECRET_KEY` placeholder detectado con warning en producción; compose solo con `NET_RAW`/`NET_ADMIN` en backend/celery y `beat` sin capacidades. Backend **162 passed**; frontend **54 passed** (`lint`/`tsc`/`build` OK) |
 | PLAN-032 | Resiliencia y manejo de errores | Backend/Frontend | todo | Media | PLAN-012, PLAN-031 | Timeouts/reintentos acotados, degradación controlada, mensajes de error útiles y no sensibles, idempotencia donde aplique | Tests de fallo inducido y revisión de logs/respuestas |
 | PLAN-040 | Observabilidad y operabilidad | Infra/Backend | todo | Media | PLAN-032 | Logging estructurado consistente, correlación de scans/tareas, healthchecks útiles y métricas básicas de operación | Verificación en Docker/local + revisión de señales operativas |
-| PLAN-041 | Pipeline de calidad reproducible (CI/DX) | Infra/QA | todo | Alta | PLAN-030 | Checks automatizados (lint, type/build, tests) y entorno reproducible documentado; pasos claros para dev/prod | Ejecución de pipeline/checks y `docker-compose config/build` según aplique |
+| PLAN-041 | Pipeline de calidad reproducible (CI/DX) | Infra/QA | done | Alta | PLAN-030 | Checks automatizados (lint, type/build, tests) y entorno reproducible documentado; pasos claros para dev/prod | **Completado:** `scripts/verify.ps1`/`scripts/verify.sh` (backend pytest con SQLite in-memory por defecto, frontend lint/typecheck/`vitest run`/build, `--skip-build`); `make check`/`make verify`; scripts `typecheck` y `test:run`; workflow `.github/workflows/ci.yml` (Python 3.11/Node 20) y `docs/CI.md`. Verificación: `verify.ps1` → **All checks passed** (backend **162**, frontend **54**, build OK) |
 | PLAN-042 | Documentación profesional y runbooks | Docs | todo | Media | PLAN-023, PLAN-040, PLAN-041 | README/API/config/deploy/troubleshooting/runbooks actualizados, limitaciones conocidas y guía de operación segura | Revisión cruzada docs vs comportamiento real |
 | PLAN-043 | Decidir y acotar estrategia de `electron/` | Producto/Infra | todo | Baja | PLAN-001 | DEC explícita: implementar, aplazar o retirar del alcance activo; plan/grafo ajustados | `DEC-xxx` + actualización de backlog |
 | PLAN-050 | Criterios de release y hardening final | Release | todo | Media | PLAN-022, PLAN-023, PLAN-030, PLAN-031, PLAN-032, PLAN-041, PLAN-042 | Checklist de release aprobado, versiones/tagging, configuración prod segura, smoke tests y rollback básico documentados | Dry-run de release + verificación de checklist |
@@ -138,10 +138,10 @@ Se considerará el objetivo alcanzado cuando:
 
 ## 10. Próxima iteración (loop slice)
 
-1. **PLAN-041:** pipeline reproducible (lint/type/build/tests) y entorno de verificación documentado.
-2. **PLAN-021:** validación funcional del flujo UI principal (dashboard, creación, progreso WS, cancelación) con backend real en entorno controlado.
-3. **PLAN-023:** validación de disparo real de un schedule en entorno autorizado (DEC-004) y ajuste de guardrails operativos.
-4. **PLAN-022 (deuda):** code-splitting del bundle principal (~530 kB) y pruebas funcionales del navegador de resultados.
+1. **PLAN-021:** validación funcional del flujo UI principal (dashboard, creación, progreso WS, cancelación) con backend real en entorno controlado.
+2. **PLAN-023:** validación de disparo real de un schedule en entorno autorizado (DEC-004) y ajuste de guardrails operativos.
+3. **PLAN-022 (deuda):** code-splitting del bundle principal (~530 kB) y pruebas funcionales del navegador de resultados.
+4. **PLAN-040/042:** observabilidad básica y runbooks de operación/release.
 5. **Salida esperada:** UI funcional coherente con el contrato v1.0, schedules operativos y checks automatizados en verde.
 
 ## 11. Historial de cambios del plan
@@ -159,3 +159,4 @@ Se considerará el objetivo alcanzado cuando:
 - **2026-11-12:** **PLAN-022 cerrado** — navegador `/results` con selector de scan, tabla plana host/puerto, búsqueda libre y filtros por estado/protocolo/servicio, contadores de hosts/puertos y export JSON/CSV/XML vía API con descarga determinista. Utilidades puras `utils/results.ts` con **11 pruebas** (TDD rojo→verde). Verificación frontend: `lint`/`tsc`/`build` OK y `vitest run` → **52 passed**. Deuda: bundle principal ~529 kB (code-splitting pendiente). Siguiente foco: validación funcional de PLAN-021 y PLAN-031/041.
 - **2026-11-12:** avance **PLAN-031 (validación)** — `app/core/validation.py` con `normalize_target` (IPv4/IPv6, CIDR, rango IPv4, hostname sin resolución DNS) y `normalize_port_range` (listas/rangos 1–65535, orden y tokens), aplicados a `ScanCreate` y `scan_config` de `ScheduleCreate`/`ScheduleUpdate`. Tests TDD: `tests/core/test_validation.py` (**40**) y `tests/api/test_input_validation.py` (**22**); suite backend completa → **144 passed**. Pendiente: límites de recursos, CORS/capacidades y secretos.
 - **2026-11-13:** **PLAN-031 cerrado** — límites `MAX_HOSTS_PER_SCAN=1024`/`MAX_PORTS_PER_SCAN=65535` aplicados a CIDR/rangos y listas de puertos (rechazo `422`, sin truncado); CORS solo con orígenes explícitos (rechaza `*`/lista vacía) y límites positivos validados en `Settings`; `SECRET_KEY` placeholder detectado (`uses_default_secret`) con warning de arranque en `ENV=production`; revisión de compose: backend/celery solo `NET_RAW`/`NET_ADMIN`, `beat` sin capacidades. Tests: `tests/core/test_config.py` nuevo; validación UI alineada (rangos IPv4 y límite 1024). Verificación: backend **162 passed**, frontend **54 passed**, `lint`/`tsc`/`build` OK. Contrato §3.1/§6 y README actualizados.
+- **2026-11-13:** **PLAN-041 cerrado** — pipeline reproducible: `scripts/verify.ps1` y `scripts/verify.sh` (backend pytest, frontend lint/typecheck/`vitest run`/build, `--skip-build`), targets `make check`/`make verify`, scripts npm `typecheck`/`test:run`, workflow `.github/workflows/ci.yml` (Python 3.11 + Node 20) y runbook `docs/CI.md`. `tests/conftest.py` fija `DATABASE_URL=sqlite:///:memory:` para ejecución sin entorno. Verificación: `verify.ps1` completo → **All checks passed** (backend **162**, frontend **54**, build OK).
