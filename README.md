@@ -300,6 +300,21 @@ npm run typecheck
 - **Rate Limiting**: Aggressive scans can impact network performance
 - **Legal**: Only scan networks you own or have permission to test
 
+See [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for incident procedures and
+[`docs/RELEASE.md`](docs/RELEASE.md) for the release checklist.
+
+## 📖 Documentation
+
+| Documento | Contenido |
+|---|---|
+| [`docs/CONTRACT.md`](docs/CONTRACT.md) | Contrato REST/WS v1.0, validación, errores y operación |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Operación, diagnóstico por síntoma y recuperación |
+| [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md) | Logs JSON, health y métricas |
+| [`docs/RELEASE.md`](docs/RELEASE.md) | Checklist de release, smoke tests y rollback |
+| [`docs/CI.md`](docs/CI.md) | Verificación local y GitHub Actions |
+| [`docs/DOCKER.md`](docs/DOCKER.md) | Contenedores, capacidades, backups y troubleshooting |
+| [`docs/UI.md`](docs/UI.md) | Dirección visual y convenciones del frontend |
+
 ## 🛣️ Roadmap
 
 - [x] Core scanning engine

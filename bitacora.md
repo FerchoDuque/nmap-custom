@@ -29,6 +29,31 @@
 
 ---
 
+## 2026-11-13 — Docs/Release (PLAN-042 cerrado, PLAN-050 iniciado)
+
+- **Objetivo (Plan ID):** PLAN-042 (runbooks y documentación profesional) y PLAN-050 (checklist de release y hardening).
+- **Contexto/insumos:** existían `docs/DOCKER.md`, `docs/CI.md`, `docs/OBSERVABILITY.md` y el contrato, pero no había un runbook por síntoma ni un procedimiento de release verificable. Los compose conservaban `version: '3.8'` (obsoleto en Compose v2) y el backend de producción arrancaba con `API_RELOAD` por defecto (`true`).
+- **Acciones realizadas:**
+  - **Runbook:** `docs/RUNBOOK.md` con mapa de servicios/puertos (backend `8001→8000`, frontend `80`), ciclo de vida (`make prod/dev/ps/logs`), chequeo de salud (`/api/health`, `/api/metrics`), diagnóstico por síntoma (500, scans `pending`, `failed`, cancelación, schedules, logs, DB/migraciones), configuración crítica y seguridad operativa.
+  - **Release:** `docs/RELEASE.md` con SemVer/tagging (`vX.Y.Z`), checklist de calidad/seguridad/DB/documentación, smoke tests 1–10 (incluye WS, export, cancelación y schedules), rollback con backup y limitaciones conocidas de 0.1.0.
+  - **README:** índice de documentación, variables de resiliencia (`MAX_*`, `DEFAULT_SCAN_TIMEOUT`, `RESOLVE_HOSTNAMES`) y referencias a runbook/release en seguridad.
+  - **Compose:** eliminado `version:` obsoleto en `docker-compose.yml` y `docker-compose.dev.yml`; añadido `API_RELOAD=false` al backend de producción.
+- **Archivos tocados:**
+  - `docs/RUNBOOK.md`, `docs/RELEASE.md` (nuevos)
+  - `README.md`, `plan.md`, `bitacora.md`
+  - `docker-compose.yml`, `docker-compose.dev.yml`
+- **Verificación:**
+  - `docker compose -f docker-compose.yml config --quiet` → **exit 0**; `docker-compose.dev.yml` → **exit 0** (sin aviso de `version`).
+  - Comandos citados en el runbook (`prod`, `dev`, `ps`, `logs*`, `restart*`, `migrate`, `shell-db`) contrastados con los targets reales del `Makefile`.
+  - Rutas/anclas revisadas contra `docs/DOCKER.md` (sección *Backup & Restore* por nombre, no por ancla).
+  - No se ejecutaron `build`/`up` ni smoke tests reales.
+- **Hallazgos / riesgos / deuda:**
+  - **Bloqueo:** Docker Desktop no está corriendo (`docker info` falla con `dockerDesktopLinuxEngine`), así que el dry-run de PLAN-050 (build/up + smoke tests 1–2) queda pendiente; los smoke tests 3–10 requieren además un entorno autorizado (DEC-004).
+  - La documentación de release incluye intencionadamente limitaciones vigentes: sin auth/multi-tenancy, sin E2E en CI, sin exportador Prometheus, nivel de log fijo y `celery --pool=solo`.
+  - Warnings de deprecación (Pydantic v1-style, `on_event`, `datetime.utcnow()`) se documentan como no bloqueantes para 0.1.0.
+- **Decisiones:** sin `DEC` nueva; se consolidan DEC-004 (alcance), DEC-012 (observabilidad) y DEC-013 (resiliencia) en los procedimientos.
+- **Siguiente paso:** con Docker activo, `make build`/`make up` y smoke tests 1–2; después, en entorno autorizado, smoke tests 3–10 y cierre de PLAN-050 con evidencia en `docs/RELEASE.md` §6.
+
 ## 2026-11-13 — Backend/QA (PLAN-032: resiliencia, timeouts e idempotencia)
 
 - **Objetivo (Plan ID):** PLAN-032 (degradación controlada, mensajes seguros e idempotencia).
