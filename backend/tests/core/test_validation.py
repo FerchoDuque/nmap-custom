@@ -12,11 +12,11 @@ class TestNormalizeTarget:
         "value",
         [
             "192.168.1.10",
-            " 10.0.0.0/8 ",
+            " 10.0.0.0/24 ",
             "localhost",
             "scan-01.example.com",
             "2001:db8::1",
-            "2001:db8::/32",
+            "2001:db8::/120",
             "192.168.1.10-192.168.1.20",
         ],
     )
@@ -47,6 +47,14 @@ class TestNormalizeTarget:
         with pytest.raises(ValueError):
             normalize_target(None)
 
+    @pytest.mark.parametrize(
+        "value",
+        ["10.0.0.0/8", "2001:db8::/32", "10.0.0.1-10.1.0.1"],
+    )
+    def test_rejects_ranges_above_host_limit(self, value):
+        with pytest.raises(ValueError, match="exceeds maximum of 1024 hosts"):
+            normalize_target(value)
+
 
 class TestNormalizePortRange:
     @pytest.mark.parametrize("value", [None, "", "   "])
@@ -71,6 +79,13 @@ class TestNormalizePortRange:
     def test_rejects_invalid_ranges(self, value):
         with pytest.raises(ValueError):
             normalize_port_range(value)
+
+    def test_rejects_ranges_above_port_limit(self):
+        with pytest.raises(ValueError, match="exceeds maximum of 500 ports"):
+            normalize_port_range("1-1000", max_ports=500)
+
+    def test_accepts_ranges_within_custom_limit(self):
+        assert normalize_port_range("1-100", max_ports=100) == "1-100"
 
 
 class TestNormalizeScanConfig:

@@ -57,6 +57,12 @@ async def startup_event():
     logger.info("explicit permission to scan.")
     logger.info("=" * 80)
 
+    if settings.env.lower() == "production" and settings.uses_default_secret:
+        logger.warning(
+            "SECRET_KEY is still the placeholder value; set a strong secret "
+            "before exposing the API."
+        )
+
 
 @app.on_event("shutdown")
 async def shutdown_event():

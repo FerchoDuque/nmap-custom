@@ -17,6 +17,15 @@ PORT_TOKEN = re.compile(r"^(\d{1,5})(?:-(\d{1,5}))?$")
 MAX_HOSTNAME_LENGTH = 253
 MIN_PORT = 1
 MAX_PORT = 65535
+DEFAULT_MAX_HOSTS = 1024
+DEFAULT_MAX_PORTS = 65535
+
+
+def _host_count(network: ipaddress._BaseNetwork) -> int:
+    """Usable host count without materializing large ranges."""
+    if network.version == 4 and network.prefixlen < 31:
+        return max(network.num_addresses - 2, 0)
+    return network.num_addresses
 
 
 def _is_valid_hostname(value: str) -> bool:
@@ -27,11 +36,12 @@ def _is_valid_hostname(value: str) -> bool:
     return bool(labels) and all(HOSTNAME_LABEL.match(label) for label in labels)
 
 
-def normalize_target(value: Any) -> str:
+def normalize_target(value: Any, max_hosts: int = DEFAULT_MAX_HOSTS) -> str:
     """Return a stripped target or raise ``ValueError`` if unsupported.
 
     Accepted: IPv4/IPv6 address, CIDR range, dotted IPv4 range
-    (``start-end``) and syntactically valid hostnames.
+    (``start-end``) and syntactically valid hostnames. Ranges larger than
+    ``max_hosts`` are rejected instead of being silently truncated.
     """
     if not isinstance(value, str):
         raise ValueError("Target must be a string")
@@ -45,9 +55,11 @@ def normalize_target(value: Any) -> str:
         if not address or not prefix.isdigit():
             raise ValueError("Invalid CIDR prefix")
         try:
-            ipaddress.ip_network(target, strict=False)
+            network = ipaddress.ip_network(target, strict=False)
         except ValueError as exc:
             raise ValueError("Invalid CIDR range") from exc
+        if _host_count(network) > max_hosts:
+            raise ValueError(f"Target exceeds maximum of {max_hosts} hosts")
         return target
 
     if "-" in target and "." in target:
@@ -63,6 +75,8 @@ def normalize_target(value: Any) -> str:
                 raise ValueError("IP range endpoints must use the same family")
             if int(start) > int(end):
                 raise ValueError("IP range end must not precede start")
+            if int(end) - int(start) + 1 > max_hosts:
+                raise ValueError(f"Target exceeds maximum of {max_hosts} hosts")
             return f"{start}-{end}"
 
     if IPV4_LIKE.match(target):
@@ -84,7 +98,9 @@ def normalize_target(value: Any) -> str:
     return target
 
 
-def normalize_port_range(value: Any) -> Optional[str]:
+def normalize_port_range(
+    value: Any, max_ports: int = DEFAULT_MAX_PORTS
+) -> Optional[str]:
     """Normalize a comma-separated port list/ranges, or return ``None``."""
     if value is None:
         return None
@@ -96,6 +112,7 @@ def normalize_port_range(value: Any) -> Optional[str]:
         return None
 
     normalized = []
+    total_ports = 0
     for raw_token in range_text.split(","):
         token = raw_token.strip()
         if not token:
@@ -113,12 +130,20 @@ def normalize_port_range(value: Any) -> Optional[str]:
         if end < start:
             raise ValueError("Invalid port range (end before start)")
 
+        total_ports += end - start + 1
+        if total_ports > max_ports:
+            raise ValueError(f"Port range exceeds maximum of {max_ports} ports")
+
         normalized.append(f"{start}-{end}" if match.group(2) else str(start))
 
     return ",".join(normalized)
 
 
-def normalize_scan_config(config: Any) -> Dict[str, Any]:
+def normalize_scan_config(
+    config: Any,
+    max_hosts: int = DEFAULT_MAX_HOSTS,
+    max_ports: int = DEFAULT_MAX_PORTS,
+) -> Dict[str, Any]:
     """Validate and normalize a schedule ``scan_config`` payload."""
     if not isinstance(config, dict):
         raise ValueError("scan_config must be an object")
@@ -126,7 +151,7 @@ def normalize_scan_config(config: Any) -> Dict[str, Any]:
         raise ValueError("scan_config.target is required")
 
     normalized = dict(config)
-    normalized["target"] = normalize_target(config["target"])
+    normalized["target"] = normalize_target(config["target"], max_hosts=max_hosts)
 
     if "scan_type" in config:
         try:
@@ -135,6 +160,8 @@ def normalize_scan_config(config: Any) -> Dict[str, Any]:
             raise ValueError(f"Unsupported scan_type: {config['scan_type']!r}") from exc
 
     if config.get("port_range") is not None:
-        normalized["port_range"] = normalize_port_range(config["port_range"])
+        normalized["port_range"] = normalize_port_range(
+            config["port_range"], max_ports=max_ports
+        )
 
     return normalized

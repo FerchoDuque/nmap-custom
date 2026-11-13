@@ -29,6 +29,33 @@
 
 ---
 
+## 2026-11-13 — Backend/Security (PLAN-031: límites, CORS y secretos)
+
+- **Objetivo (Plan ID):** PLAN-031 (cierre: límites de recursos, configuración CORS y manejo de secretos).
+- **Contexto/insumos:** la validación de targets/puertos ya rechazaba formatos inválidos, pero un CIDR enorme o una lista completa de puertos podía encolar trabajo desproporcionado; CORS aceptaba cualquier valor y `SECRET_KEY` tenía un placeholder silencioso.
+- **Acciones realizadas:**
+  - **Límites de recursos:** `normalize_target` rechaza CIDR/rangos por encima de `MAX_HOSTS_PER_SCAN` (default `1024`) sin materializar hosts; `normalize_port_range` suma el total de puertos y rechaza por encima de `MAX_PORTS_PER_SCAN` (default `65535`). Ambos límites se leen de `Settings` en los schemas, así que aplican a scans y `scan_config` de schedules.
+  - **Configuración:** `Settings` valida límites positivos, normaliza CORS y rechaza wildcard `*` o lista vacía; nuevo `uses_default_secret`; warning de arranque en `ENV=production` si sigue el placeholder.
+  - **Capacidades:** revisión de `docker-compose.yml`/`docker-compose.dev.yml`: backend y celery solo con `NET_RAW`/`NET_ADMIN`, sin `privileged`; `beat` sin `cap_add`.
+  - **Alineación UI:** `utils/validation.ts` replica el límite de 1024 hosts y acepta rangos IPv4 (`a-b`) con orden y tamaño validados.
+  - **Docs:** contrato §3.1/§6 (límites, CORS, suites), README (security/config), `docs/DOCKER.md` (servicio `beat` y capacidades), `.env.example`/`.env.docker` (`MAX_HOSTS_PER_SCAN`).
+- **Archivos tocados:**
+  - `backend/app/core/validation.py`, `backend/app/config.py`, `backend/app/schemas/scan.py`, `backend/app/main.py`
+  - `backend/tests/core/test_validation.py`, `backend/tests/core/test_config.py` (nuevo), `backend/tests/api/test_input_validation.py`
+  - `frontend/src/utils/validation.ts`, `frontend/src/utils/validation.test.ts`
+  - `docs/CONTRACT.md`, `docs/DOCKER.md`, `README.md`, `.env.docker`, `backend/.env.example`, `plan.md`, `bitacora.md`
+- **Verificación:**
+  - `pytest tests/core/test_validation.py tests/core/test_config.py tests/api/test_input_validation.py` → **80 passed**.
+  - `pytest tests/api tests/core` → **162 passed**.
+  - `npx vitest run` → **54 passed**; `npm run lint` → OK; `npx tsc --noEmit` → OK; `npm run build` → OK (aviso de bundle ~530 kB).
+  - Sin escaneos ni DNS reales; límites verificados con tests deterministas (DEC-004/010).
+- **Hallazgos / riesgos / deuda:**
+  - El límite de hosts se valida sintácticamente; un hostname puede resolver a múltiples IPs fuera del recuento (no se resuelve DNS).
+  - La UI ahora rechaza `/8` y rangos grandes: coherente con backend, pero puede sorprender a quien esperaba truncado; documentado en contrato/README.
+  - Queda pendiente el pipeline reproducible (PLAN-041) y la validación funcional/E2E en entorno autorizado.
+- **Decisiones:** ninguna nueva; DEC-003/004/010 vigentes (capacidades mínimas y alcance autorizado).
+- **Siguiente paso:** PLAN-041 (pipeline lint/type/build/tests reproducible) y luego validación funcional de PLAN-021/PLAN-023.
+
 ## 2026-11-12 — Backend/Security (PLAN-031: validación estricta de entradas)
 
 - **Objetivo (Plan ID):** PLAN-031 (slice de validación de targets/puertos/config).

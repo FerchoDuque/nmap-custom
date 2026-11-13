@@ -37,13 +37,14 @@ docker-compose -f docker-compose.dev.yml up
 
 ## Architecture
 
-The application consists of 5 Docker containers:
+The application consists of 6 Docker containers:
 
 1. **frontend** - Nginx serving React production build
 2. **backend** - FastAPI application with Uvicorn
 3. **celery** - Background task processor for scans
-4. **redis** - Message broker and cache
-5. **db** - PostgreSQL database
+4. **beat** - Celery Beat scheduler that dispatches due scans (no network capabilities)
+5. **redis** - Message broker and cache
+6. **db** - PostgreSQL database
 
 ## Container Details
 
@@ -74,6 +75,14 @@ The application consists of 5 Docker containers:
   - Processes scan tasks asynchronously
   - Connects to Redis and PostgreSQL
   - Auto-restart on failure
+
+### Celery Beat Container
+- **Base**: python:3.11-slim (same as backend)
+- **Capabilities**: none (scheduler only: reads schedules and enqueues scans)
+- **Features**:
+  - Runs `celery beat` with a 60 s dispatch of due schedules
+  - Relies on the DB claim (`next_run_at`) for idempotency
+  - Auto-restart on failure; run a single Beat instance per deployment
 
 ### Redis Container
 - **Base**: redis:7-alpine

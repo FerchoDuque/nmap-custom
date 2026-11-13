@@ -110,13 +110,21 @@ class TestScanInputValidation:
             task.delay.return_value = SimpleNamespace(id="task-normalize")
             response = client.post(
                 "/api/scans",
-                json=_scan_payload(target=" 10.0.0.0/8 ", port_range="22, 100-200,443"),
+                json=_scan_payload(target=" 10.0.0.0/24 ", port_range="22, 100-200,443"),
             )
 
         assert response.status_code == 201
         data = response.json()
-        assert data["target"] == "10.0.0.0/8"
+        assert data["target"] == "10.0.0.0/24"
         assert data["port_range"] == "22,100-200,443"
+
+    @pytest.mark.parametrize(
+        "target",
+        ["10.0.0.0/8", "2001:db8::/32", "10.0.0.1-10.1.0.1"],
+    )
+    def test_rejects_targets_above_host_limit(self, client, target):
+        response = client.post("/api/scans", json=_scan_payload(target=target))
+        assert response.status_code == 422
 
 
 class TestScheduleInputValidation:
@@ -151,7 +159,7 @@ class TestScheduleInputValidation:
             "/api/schedules",
             json=_schedule_payload(
                 scan_config={
-                    "target": " 10.0.0.0/8 ",
+                    "target": " 10.0.0.0/24 ",
                     "scan_type": "udp",
                     "port_range": "53, 123",
                 }
@@ -160,7 +168,7 @@ class TestScheduleInputValidation:
 
         assert response.status_code == 201
         assert response.json()["scan_config"] == {
-            "target": "10.0.0.0/8",
+            "target": "10.0.0.0/24",
             "scan_type": "udp",
             "port_range": "53,123",
         }

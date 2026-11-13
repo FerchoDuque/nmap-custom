@@ -186,6 +186,24 @@
 
 ---
 
+## DEC-011 — Límites de recursos explícitos y configuración segura por entorno
+- **Fecha:** 2026-11-13
+- **Estado:** accepted
+- **Contexto:** el motor limitaba rangos grandes truncando silenciosamente a 1024 hosts y la API aceptaba cualquier valor de CORS/`SECRET_KEY`, lo que podía encolar trabajo desproporcionado o exponer el servicio.
+- **Decisión:**
+  - Rechazar con `422` (nunca truncar) targets por encima de `MAX_HOSTS_PER_SCAN` (default `1024`) y listas por encima de `MAX_PORTS_PER_SCAN` (default `65535`), configurables por entorno y aplicadas de forma uniforme a scans y schedules.
+  - Exigir orígenes CORS explícitos; `*` y listas vacías fallan al cargar la configuración.
+  - Detectar el `SECRET_KEY` placeholder y emitir warning al arrancar en `ENV=production`.
+  - Mantener mínimo privilegio en contenedores: `NET_RAW`/`NET_ADMIN` solo en backend/celery; `beat` sin capacidades.
+- **Alternativas consideradas:** truncar como hacía el mapper (descartado: resultados incompletos y silenciosos); permitir `*` con credenciales (descartado: exposición amplia); límites solo en UI (descartado: no protege API/directos).
+- **Consecuencias:**
+  - (+) Comportamiento predecible, protección de recursos y configuración segura por defecto; errores accionables para el operador.
+  - (-) Rangos legítimamente grandes requieren subdividir el escaneo o elevar el límite de forma consciente; puede romper expectativas previas de truncado.
+- **Impacto en plan/grafo:** cierra `PLAN-031`; condiciona `PLAN-032` (mensajes/timeouts) y `PLAN-050` (config de release).
+- **Verificación:** `backend/tests/core/test_config.py`, `test_validation.py` y `test_input_validation.py`; `frontend/src/utils/validation.test.ts`; suite backend **162 passed** y frontend **54 passed**.
+
+---
+
 ## Plantilla para nuevas decisiones
 
 ```md

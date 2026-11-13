@@ -8,8 +8,27 @@ describe('validateTarget', () => {
 
   it('accepts valid IPv4 addresses and CIDR ranges', () => {
     expect(validateTarget('192.168.1.1')).toBeNull();
-    expect(validateTarget('10.0.0.0/8')).toBeNull();
-    expect(validateTarget('0.0.0.0/0')).toBeNull();
+    expect(validateTarget('10.0.0.0/24')).toBeNull();
+    expect(validateTarget('0.0.0.0/22')).toBeNull();
+  });
+
+  it('rejects CIDR ranges above the host limit', () => {
+    expect(validateTarget('10.0.0.0/8')).toBe(
+      'Target exceeds maximum of 1024 hosts'
+    );
+    expect(validateTarget('0.0.0.0/0')).toBe(
+      'Target exceeds maximum of 1024 hosts'
+    );
+  });
+
+  it('accepts IPv4 ranges and rejects invalid or oversized ranges', () => {
+    expect(validateTarget('192.168.1.10-192.168.1.20')).toBeNull();
+    expect(validateTarget('192.168.1.20-192.168.1.10')).toBe(
+      'Invalid IP range (end before start)'
+    );
+    expect(validateTarget('192.168.0.0-192.168.8.0')).toBe(
+      'Target exceeds maximum of 1024 hosts'
+    );
   });
 
   it('rejects invalid IPv4 addresses and prefixes', () => {
@@ -34,9 +53,12 @@ describe('validateTarget', () => {
 
   it('accepts basic IPv6 and rejects malformed IPv6', () => {
     expect(validateTarget('::1')).toBeNull();
-    expect(validateTarget('2001:db8::/32')).toBeNull();
+    expect(validateTarget('2001:db8::/120')).toBeNull();
     expect(validateTarget('2001:db8::/129')).toBe(
       'CIDR prefix must be between 0 and 128'
+    );
+    expect(validateTarget('2001:db8::/32')).toBe(
+      'Target exceeds maximum of 1024 hosts'
     );
     expect(validateTarget('gggg::1')).toBe('Invalid IPv6 address');
   });

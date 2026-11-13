@@ -84,4 +84,4 @@ npm run build
 npx vitest run
 ```
 
-Cobertura actual de UI/utilidades: clasificación de estados, colores, duración, mapeo WS→Scan, validación de target/puertos, errores de API, validación/formateo de schedules y filtros/export de resultados (52 pruebas).
+Cobertura actual de UI/utilidades: clasificación de estados, colores, duración, mapeo WS→Scan, validación de target/puertos (IPv4/IPv6/CIDR/rangos y límite de 1024 hosts), errores de API, validación/formateo de schedules y filtros/export de resultados (54 pruebas).

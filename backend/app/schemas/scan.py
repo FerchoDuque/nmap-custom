@@ -2,6 +2,7 @@ from croniter import croniter
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from app.config import settings
 from app.core.validation import (
     normalize_port_range,
     normalize_scan_config,
@@ -27,12 +28,12 @@ class ScanCreate(BaseModel):
     @validator("target")
     def validate_target(cls, v):
         """Validate and normalize IP/CIDR/range/hostname targets."""
-        return normalize_target(v)
+        return normalize_target(v, max_hosts=settings.max_hosts_per_scan)
     
     @validator("port_range")
     def validate_port_range(cls, v):
         """Validate and normalize port lists/ranges."""
-        return normalize_port_range(v)
+        return normalize_port_range(v, max_ports=settings.max_ports_per_scan)
 
 
 class ScanUpdate(BaseModel):
@@ -134,7 +135,11 @@ class ScheduleCreate(BaseModel):
     @validator("scan_config")
     def validate_config(cls, v):
         """Validate target, ports and scan type before persisting."""
-        return normalize_scan_config(v)
+        return normalize_scan_config(
+            v,
+            max_hosts=settings.max_hosts_per_scan,
+            max_ports=settings.max_ports_per_scan,
+        )
 
     @validator("cron_expression")
     def validate_cron(cls, v):
@@ -158,7 +163,11 @@ class ScheduleUpdate(BaseModel):
         """Validate an optional scan config update."""
         if v is None:
             return v
-        return normalize_scan_config(v)
+        return normalize_scan_config(
+            v,
+            max_hosts=settings.max_hosts_per_scan,
+            max_ports=settings.max_ports_per_scan,
+        )
 
     @validator("cron_expression")
     def validate_cron(cls, v):

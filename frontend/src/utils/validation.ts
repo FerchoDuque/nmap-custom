@@ -13,10 +13,24 @@ const IPV6 = /^[0-9a-f:]+$/i;
 const HOSTNAME_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
 const PORT_TOKEN = /^(\d{1,5})(?:-(\d{1,5}))?$/;
 
+export const MAX_HOSTS_PER_SCAN = 1024;
+export const MAX_PORTS_PER_SCAN = 65535;
+
 function isValidIpv4(value: string): boolean {
   const match = IPV4.exec(value);
   if (!match) return false;
   return match.slice(1).every((octet) => Number(octet) <= 255);
+}
+
+function ipv4ToInt(value: string): number {
+  const [a, b, c, d] = value.split('.').map(Number);
+  return ((a << 24) | (b << 16) | (c << 8) | d) >>> 0;
+}
+
+function hostCount(address: string, prefix: number): number {
+  const bits = IPV4.test(address) ? 32 : 128;
+  const size = 2 ** (bits - prefix);
+  return bits === 32 && prefix < 31 ? Math.max(size - 2, 0) : size;
 }
 
 function isValidHostname(value: string): boolean {
@@ -39,15 +53,40 @@ export function validateTarget(rawTarget: string): string | null {
     if (IPV4.test(address)) {
       if (!isValidIpv4(address)) return 'Invalid IPv4 address';
       const bits = Number(prefix);
-      return bits >= 0 && bits <= 32 ? null : 'CIDR prefix must be between 0 and 32';
+      if (bits < 0 || bits > 32) return 'CIDR prefix must be between 0 and 32';
+      if (hostCount(address, bits) > MAX_HOSTS_PER_SCAN) {
+        return `Target exceeds maximum of ${MAX_HOSTS_PER_SCAN} hosts`;
+      }
+      return null;
     }
 
     if (IPV6.test(address) && address.includes(':')) {
       const bits = Number(prefix);
-      return bits >= 0 && bits <= 128 ? null : 'CIDR prefix must be between 0 and 128';
+      if (bits < 0 || bits > 128) return 'CIDR prefix must be between 0 and 128';
+      if (hostCount(address, bits) > MAX_HOSTS_PER_SCAN) {
+        return `Target exceeds maximum of ${MAX_HOSTS_PER_SCAN} hosts`;
+      }
+      return null;
     }
 
     return 'Invalid CIDR address';
+  }
+
+  if (address.includes('-') && address.includes('.')) {
+    const parts = address.split('-');
+    if (
+      parts.length === 2 &&
+      isValidIpv4(parts[0].trim()) &&
+      isValidIpv4(parts[1].trim())
+    ) {
+      const start = ipv4ToInt(parts[0].trim());
+      const end = ipv4ToInt(parts[1].trim());
+      if (end < start) return 'Invalid IP range (end before start)';
+      if (end - start + 1 > MAX_HOSTS_PER_SCAN) {
+        return `Target exceeds maximum of ${MAX_HOSTS_PER_SCAN} hosts`;
+      }
+      return null;
+    }
   }
 
   if (IPV4.test(address)) {

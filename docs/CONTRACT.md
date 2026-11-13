@@ -109,6 +109,8 @@ Base: `/api/scans`
 - `target` acepta IPv4, IPv6, CIDR (`10.0.0.0/8`), rango IPv4 (`192.168.1.10-192.168.1.20`) y hostnames sintácticamente válidos. No se resuelven DNS durante la validación.
 - `port_range` acepta listas y rangos separados por comas (`22,80,443`, `1-1000`, `22,100-200`); se normaliza sin espacios. Cada puerto debe estar entre 1 y 65535 y el fin no puede preceder al inicio.
 - `scan_config` de schedules aplica las mismas validaciones sobre `target`/`port_range` y valida `scan_type` contra el enum; configuración inválida → `422`.
+- **Límites de recursos:** `MAX_HOSTS_PER_SCAN` (default `1024`) y `MAX_PORTS_PER_SCAN` (default `65535`) se configuran por entorno. Un CIDR/rango que supere el máximo de hosts, o una lista que supere el máximo de puertos, se rechaza con `422`; no se trunca silenciosamente.
+- **CORS:** `CORS_ORIGINS` debe listar orígenes explícitos (`http://localhost:5173`); el wildcard `*` y una lista vacía fallan al arrancar la configuración.
 
 ### 3.2 Ciclo de vida y cancelación
 
@@ -241,6 +243,7 @@ Cobertura de contrato actual:
 - `TestScheduleContract`: `next_run_at` en creación/edición/deshabilitado, cron inválido `422`, CRUD y `404`.
 - `test_scheduler.py`: cálculo de `next_run_at`, mapeo `scan_config`→`Scan`, despacho idempotente, fallos de enqueue/config y cron inválido.
 - `test_dispatch_task.py`: entrada Celery de despacho (conteo y cierre de sesión, incluso con error).
-- `test_validation.py` / `test_input_validation.py`: targets y puertos válidos/inválidos, normalización y rechazo `422` en scans y `scan_config` de schedules.
+- `test_validation.py` / `test_input_validation.py`: targets y puertos válidos/inválidos, normalización, límites de hosts/puertos y rechazo `422` en scans y `scan_config` de schedules.
+- `test_config.py`: CORS explícito (rechazo de `*`/lista vacía), límites positivos y detección del `SECRET_KEY` placeholder.
 
 Pendiente: validación E2E de WS en un entorno de red autorizado (DEC-004).

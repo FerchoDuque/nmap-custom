@@ -257,7 +257,11 @@ npm run test
 
 ## 🔐 Security Considerations
 
-- **Privileges**: SYN scans and OS fingerprinting require root/administrator privileges
+- **Authorization**: Only scan networks you own or have explicit written permission to test. Validation is syntactic and does not replace authorization controls.
+- **Privileges**: SYN scans and OS fingerprinting require root/administrator privileges; run the worker with `NET_RAW`/`NET_ADMIN` only, never privileged mode.
+- **Resource limits**: `MAX_HOSTS_PER_SCAN` (default `1024`) and `MAX_PORTS_PER_SCAN` (default `65535`) cap scan size; oversized CIDR ranges/port lists are rejected with `422` instead of being truncated.
+- **CORS**: `CORS_ORIGINS` must contain explicit origins; `*` and empty lists are rejected at startup.
+- **Secrets**: replace the placeholder `SECRET_KEY` before any non-local deployment. In `ENV=production` the API logs a warning if the default is still in use.
 - **Firewall**: May trigger IDS/IPS systems
 - **Rate Limiting**: Aggressive scans can impact network performance
 - **Legal**: Only scan networks you own or have permission to test
