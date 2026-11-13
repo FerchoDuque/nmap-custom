@@ -1,13 +1,11 @@
 import asyncio
 from datetime import datetime
 from sqlalchemy.orm import Session
-import logging
 
 from app.database import SessionLocal
 from app.models.scan import Scan, ScanResult, Port, ScanStatus
+from app.core.logging_utils import get_scan_logger
 from app.core.scanner import NetworkScanner
-
-logger = logging.getLogger(__name__)
 
 try:
     from app.celery_app import celery_app
@@ -34,20 +32,23 @@ def perform_scan_task(self, scan_id: int):
         scan_id: ID of the scan to perform
     """
     db = SessionLocal()
+    task_id = getattr(getattr(self, "request", None), "id", None)
+    scan_log = get_scan_logger(scan_id, task_id=task_id)
     
     try:
         # Get scan from database
         scan = db.query(Scan).filter(Scan.id == scan_id).first()
         
         if not scan:
-            logger.error(f"Scan {scan_id} not found")
+            scan_log.error("Scan not found", extra={"event": "scan.not_found"})
             return
         
         # Update scan status
         scan.status = ScanStatus.RUNNING
         scan.started_at = datetime.utcnow()
-        scan.task_id = self.request.id
+        scan.task_id = task_id
         db.commit()
+        scan_log.info("Scan started", extra={"event": "scan.started"})
         
         # Create scanner
         scanner = NetworkScanner()
@@ -71,7 +72,11 @@ def perform_scan_task(self, scan_id: int):
                     }
                 )
             except Exception as e:
-                logger.error(f"Error updating progress: {e}")
+                scan_log.error(
+                    "Error updating progress: %s",
+                    e,
+                    extra={"event": "scan.progress_error"},
+                )
         
         # Run scan
         loop = asyncio.new_event_loop()
@@ -130,7 +135,15 @@ def perform_scan_task(self, scan_id: int):
         scan.progress = 100
         db.commit()
         
-        logger.info(f"Scan {scan_id} completed successfully")
+        scan_log.info(
+            "Scan completed",
+            extra={
+                "event": "scan.completed",
+                "status": "completed",
+                "hosts_found": results["hosts_up"],
+                "ports_found": results["total_ports_found"],
+            },
+        )
         
         return {
             "scan_id": scan_id,
@@ -140,7 +153,11 @@ def perform_scan_task(self, scan_id: int):
         }
         
     except Exception as e:
-        logger.error(f"Error performing scan {scan_id}: {e}")
+        scan_log.error(
+            "Scan failed: %s",
+            e,
+            extra={"event": "scan.failed", "status": "failed"},
+        )
         
         # Update scan status to failed
         scan = db.query(Scan).filter(Scan.id == scan_id).first()

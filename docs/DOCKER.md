@@ -321,6 +321,10 @@ curl http://localhost/api/health
 docker-compose ps
 ```
 
+`/api/health` devuelve `503` si la API no puede consultar la base; el
+`HEALTHCHECK` del backend usa esa señal y no requiere paquetes extra. Ver
+[Observabilidad](OBSERVABILITY.md) para logs JSON, eventos y métricas.
+
 ### Resource Usage
 ```bash
 make stats

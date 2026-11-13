@@ -155,6 +155,36 @@ Formato estándar de FastAPI:
 - `scan_config` requiere `target`; `scan_type` por defecto `tcp_connect`. Configuración inválida avanza `next_run_at`, cuenta `failed_runs` y no bloquea al resto.
 - Los contadores `total_runs`/`successful_runs`/`failed_runs` se actualizan en el despacho.
 
+### 3.6 Operación — `/api/health` y `/api/metrics` (PLAN-040)
+
+Endpoints de solo lectura para contenedores y smoke checks; no exponen datos de escaneo.
+
+| Método | Ruta | Respuesta | Errores |
+|---|---|---|---|
+| `GET` | `/api/health` | `200` + `{ "status": "healthy", "database": "connected" }` | `503` + `{ "status": "degraded", "database": "unavailable" }` |
+| `GET` | `/api/metrics` | `200` + agregados (ver abajo) | — |
+
+- `health` ejecuta `SELECT 1` contra la base; un fallo de conexión devuelve `503` para que el orquestador marque el contenedor como no saludable.
+- `metrics` agrega estado de scans sin devolver `results`:
+
+```json
+{
+  "scans": {
+    "total": 5,
+    "by_status": { "completed": 2, "failed": 1, "pending": 1, "running": 1 },
+    "active": 2
+  },
+  "hosts_up_total": 6,
+  "ports_found_total": 17
+}
+```
+
+`active` = `pending + running`; `by_status` omite estados sin scans y los totales usan `coalesce` (`0` con base vacía).
+
+### 3.7 Logging estructurado
+
+Los logs del backend se emiten como **una línea JSON** (`app/core/logging_utils.py`) con `timestamp`, `level`, `logger`, `message` y, si aplican, `scan_id`, `task_id`, `event`, `status`, `duration_ms`, `hosts_found`, `ports_found` y `exception` (traceback). Las tareas usan `get_scan_logger(scan_id, task_id=...)` con eventos `scan.started`, `scan.completed`, `scan.failed`, `scan.not_found` y `scan.progress_error`.
+
 ---
 
 ## 4. WebSocket — `/ws/scan/{scan_id}`
@@ -245,5 +275,7 @@ Cobertura de contrato actual:
 - `test_dispatch_task.py`: entrada Celery de despacho (conteo y cierre de sesión, incluso con error).
 - `test_validation.py` / `test_input_validation.py`: targets y puertos válidos/inválidos, normalización, límites de hosts/puertos y rechazo `422` en scans y `scan_config` de schedules.
 - `test_config.py`: CORS explícito (rechazo de `*`/lista vacía), límites positivos y detección del `SECRET_KEY` placeholder.
+- `test_system.py`: `/api/health` saludable y `503` degradado con fallo de DB simulado; `/api/metrics` con conteos por estado, activos y totales (incluida base vacía).
+- `test_logging_utils.py`: campos de correlación en JSON, traceback, tolerancia a `exc_info=True` sin excepción activa, inyección/override de `scan_id`/`task_id` y configuración idempotente por logger.
 
 Pendiente: validación E2E de WS en un entorno de red autorizado (DEC-004).

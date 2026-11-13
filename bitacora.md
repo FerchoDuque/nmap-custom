@@ -29,6 +29,34 @@
 
 ---
 
+## 2026-11-13 — Infra/Backend (PLAN-040: observabilidad, health y métricas)
+
+- **Objetivo (Plan ID):** PLAN-040 (logging estructurado con correlación, health útil y métricas básicas).
+- **Contexto/insumos:** `main.py` usaba `logging.basicConfig` con texto libre; `tasks.py` logueaba sin `scan_id`/`task_id`; `/api/health` devolvía `healthy` fijo sin tocar la base y no existían métricas de operación. El `HEALTHCHECK` del Dockerfile importaba `requests`, que no está en `requirements.txt`.
+- **Acciones realizadas:**
+  - **TDD logging:** `tests/core/test_logging_utils.py` define formato JSON, correlación, traceback, override de `scan_id` e idempotencia; implementado `app/core/logging_utils.py` con `JsonFormatter`, `ScanLoggerAdapter`, `get_scan_logger(scan_id, task_id, logger=None)` y `configure_logging`.
+  - **Compatibilidad Python 3.14:** el intérprete mantiene `exc_info=True` como booleano en `LogRecord`; el formatter resuelve bools vía `sys.exc_info()` y omite el campo si no hay excepción activa (sin `TypeError`).
+  - **Correlación en tareas:** `tasks.py` emite `scan.started`, `scan.completed` (hosts/puertos), `scan.failed`, `scan.not_found` y `scan.progress_error`; `scan.task_id` usa el id resuelto defensivamente (fallback sin Celery).
+  - **Health y métricas:** `api/system.py` con `/api/health` (`SELECT 1`, `503` + `degraded` si la DB falla) y `/api/metrics` (total, `by_status`, `active`, `hosts_up_total`, `ports_found_total` con `coalesce`); `main.py` incluye el router y configura logging JSON al arrancar.
+  - **Docker/healthcheck:** `backend/Dockerfile` usa `urllib.request` de la stdlib, sin dependencia de `requests`.
+  - **Docs:** contrato §3.6 (operación) y §3.7 (logging), `docs/OBSERVABILITY.md`, README y `docs/DOCKER.md`.
+- **Archivos tocados:**
+  - `backend/app/core/logging_utils.py`, `backend/app/api/system.py` (nuevos)
+  - `backend/app/main.py`, `backend/app/tasks.py`, `backend/Dockerfile`
+  - `backend/tests/core/test_logging_utils.py`, `backend/tests/api/test_system.py` (nuevos)
+  - `docs/CONTRACT.md`, `docs/OBSERVABILITY.md` (nuevo), `docs/DOCKER.md`, `README.md`, `plan.md`, `bitacora.md`
+- **Verificación:**
+  - `pytest tests/core/test_logging_utils.py tests/api/test_system.py -q` → **13 passed**.
+  - `pytest tests/api tests/core -q` → **175 passed** (antes 162).
+  - Sin red real ni contenedores; DB simulada con SQLite in-memory y `MagicMock` para el caso degradado (DEC-004/010).
+- **Hallazgos / riesgos / deuda:**
+  - Los tests del adapter ahora inyectan un logger dedicado (`get_scan_logger(..., logger=...)`); el logger compartido `app.scans` queda para runtime.
+  - Nivel de log fijo en `INFO` al arrancar; hacerlo configurable por entorno queda como deuda.
+  - Sin exportador Prometheus/OpenTelemetry; `/api/metrics` es el contrato estable por ahora.
+  - El healthcheck del Dockerfile no se validó construyendo la imagen (sin Docker en este entorno).
+- **Decisiones:** DEC-012 (JSON logs stdlib, health 503 y métricas agregadas).
+- **Siguiente paso:** PLAN-032 (resiliencia/errores) y PLAN-042/050 (runbooks y release), más validación real de schedules (PLAN-023) en entorno autorizado.
+
 ## 2026-11-13 — Frontend (deuda PLAN-022: code-splitting del bundle)
 
 - **Objetivo (Plan ID):** PLAN-022 (deuda de rendimiento: bundle principal > 500 kB).

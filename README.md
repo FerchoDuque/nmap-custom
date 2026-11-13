@@ -226,6 +226,11 @@ Once the backend is running, visit:
 - `POST /api/scans/{id}/export` - Export results
 - `WS /ws/scan/{id}` - WebSocket for real-time updates
 - `POST /api/schedules` - Create scheduled scan
+- `GET /api/health` - Liveness + database connectivity (`503` when degraded)
+- `GET /api/metrics` - Scan counts and totals for dashboards
+
+See [Observability](docs/OBSERVABILITY.md) for JSON log fields, health
+semantics and metrics, and [CI](docs/CI.md) for the reproducible checks.
 
 ## 🧪 Testing
 

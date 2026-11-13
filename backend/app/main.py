@@ -3,14 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from app.config import settings
+from app.core.logging_utils import configure_logging
 from app.database import init_db
-from app.api import scans, websocket, schedules
+from app.api import scans, websocket, schedules, system
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Configure structured JSON logging (idempotent).
+configure_logging(level="INFO")
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +34,7 @@ app.add_middleware(
 app.include_router(scans.router)
 app.include_router(websocket.router)
 app.include_router(schedules.router)
+app.include_router(system.router)
 
 
 @app.on_event("startup")
@@ -78,15 +77,6 @@ async def root():
         "version": "0.1.0",
         "status": "running",
         "docs": "/api/docs"
-    }
-
-
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "database": "connected"
     }
 
 

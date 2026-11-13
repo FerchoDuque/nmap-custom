@@ -204,6 +204,24 @@
 
 ---
 
+## DEC-012 — Observabilidad con logging JSON, health con dependencia real y métricas agregadas
+- **Fecha:** 2026-11-13
+- **Estado:** accepted
+- **Contexto:** los logs eran texto libre sin correlación, `/api/health` devolvía `healthy` sin comprobar la base y no había una vista agregada para smoke checks; añadir dependencias de observabilidad (structlog, prometheus_client, OpenTelemetry) en este punto incrementaba superficie y mantenimiento.
+- **Decisión:**
+  - Emitir **una línea JSON** por registro usando solo la librería estándar (`JsonFormatter`), con campos base (`timestamp`, `level`, `logger`, `message`) y correlación opcional (`scan_id`, `task_id`, `event`, `status`, `duration_ms`, `hosts_found`, `ports_found`, `exception`).
+  - Correlacionar tareas con `get_scan_logger(scan_id, task_id=...)` y eventos `scan.*`; el logger es inyectable para tests/sinks.
+  - `/api/health` ejecuta `SELECT 1` y responde `503` cuando la base no está disponible; el contenedor usa esa señal vía `HEALTHCHECK` sin dependencias extra.
+  - `/api/metrics` expone agregados de solo lectura (`total`, `by_status`, `active`, `hosts_up_total`, `ports_found_total`), sin `results`.
+- **Alternativas consideradas:** structlog/prometheus_client (descartado por dependencia y alcance); health estático (descartado: no detecta fallos de DB); logging texto + grep manual (descartado: difícil de filtrar por scan).
+- **Consecuencias:**
+  - (+) Señales filtrables por `scan_id`, health accionable y métricas sin dependencias nuevas; compatible con Python 3.11–3.14.
+  - (-) Sin histogramas/exportador Prometheus ni nivel de log configurable aún; `by_status` puede crecer si se añaden estados.
+- **Impacto en plan/grafo:** cierra `PLAN-040`; alimenta `PLAN-042` (runbooks) y `PLAN-050` (release).
+- **Verificación:** `backend/tests/core/test_logging_utils.py` (9) y `backend/tests/api/test_system.py` (4); suite backend **175 passed** con SQLite in-memory y DB simulada.
+
+---
+
 ## Plantilla para nuevas decisiones
 
 ```md
