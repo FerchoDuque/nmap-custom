@@ -126,6 +126,7 @@ Backup/restore: ver la sección **Backup & Restore** de [`DOCKER.md`](DOCKER.md)
 | `MAX_HOSTS_PER_SCAN` | `1024` | Rechazo `422` por encima del límite |
 | `MAX_PORTS_PER_SCAN` | `65535` | Rechazo `422` por encima del límite |
 | `DEFAULT_SCAN_TIMEOUT` | `300` | Presupuesto por scan (segundos) |
+| `LOG_LEVEL` | `INFO` | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL`; inválido impide arrancar |
 | `RESOLVE_HOSTNAMES` | `true` | DNS inverso; desactivar sin DNS |
 
 ## 6. Seguridad operativa

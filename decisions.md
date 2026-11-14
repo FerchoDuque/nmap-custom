@@ -217,6 +217,7 @@
 - **Consecuencias:**
   - (+) Señales filtrables por `scan_id`, health accionable y métricas sin dependencias nuevas; compatible con Python 3.11–3.14.
   - (-) Sin histogramas/exportador Prometheus ni nivel de log configurable aún; `by_status` puede crecer si se añaden estados.
+- **Actualización (2026-11-14):** el nivel de log ya es configurable con `LOG_LEVEL` (`DEBUG`…`CRITICAL`, default `INFO`; inválido impide arrancar). Queda pendiente solo el exportador Prometheus/OpenTelemetry. Verificación: `test_config.py::TestLogLevel` (6).
 - **Impacto en plan/grafo:** cierra `PLAN-040`; alimenta `PLAN-042` (runbooks) y `PLAN-050` (release).
 - **Verificación:** `backend/tests/core/test_logging_utils.py` (9) y `backend/tests/api/test_system.py` (4); suite backend **175 passed** con SQLite in-memory y DB simulada.
 

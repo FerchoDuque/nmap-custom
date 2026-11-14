@@ -57,6 +57,19 @@ class TestResourceLimits:
         assert settings.max_ports_per_scan == 1000
 
 
+class TestLogLevel:
+    def test_defaults_to_info(self):
+        assert _settings().log_level == "INFO"
+
+    def test_normalizes_lowercase_and_whitespace(self):
+        assert _settings(log_level=" debug ").log_level == "DEBUG"
+
+    @pytest.mark.parametrize("level", ["verbose", "TRACE", "10", ""])
+    def test_rejects_unknown_levels(self, level):
+        with pytest.raises(ValidationError, match="LOG_LEVEL"):
+            _settings(log_level=level)
+
+
 class TestSecretHandling:
     def test_flags_default_secret(self):
         assert _settings().uses_default_secret is True

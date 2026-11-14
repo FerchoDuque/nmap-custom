@@ -29,6 +29,28 @@
 
 ---
 
+## 2026-11-14 — Backend/Observabilidad (deuda PLAN-040: nivel de log configurable)
+
+- **Objetivo:** cerrar la deuda "nivel de log fijo en `INFO`" detectada al cerrar PLAN-040/DEC-012.
+- **Contexto/insumos:** `main.py` llamaba `configure_logging(level="INFO")` con un literal; no había forma de subir a `DEBUG` en diagnóstico ni de validar un valor erróneo antes de arrancar.
+- **Acciones realizadas:**
+  - **TDD:** `TestLogLevel` en `tests/core/test_config.py` (default `INFO`, normalización ` debug ` → `DEBUG`, rechazo de `verbose`/`TRACE`/`10`/vacío), en rojo antes de implementar.
+  - **Config:** `Settings.log_level` con `field_validator(mode="before")` y `VALID_LOG_LEVELS`; inválido ⇒ `ValidationError` que impide arrancar.
+  - **Arranque:** `main.py` usa `settings.log_level` en `configure_logging`.
+  - **Entornos:** `LOG_LEVEL=INFO` en prod (`.env.docker`, compose backend/celery) y `DEBUG` en dev; `LOG_LEVEL=INFO` en `backend/.env.example`; `RESOLVE_HOSTNAMES` añadido también a `.env.docker` por consistencia.
+  - **Docs:** contrato §3.7, `docs/OBSERVABILITY.md` (sección "Nivel de log"), `docs/RUNBOOK.md` (tabla), `docs/RELEASE.md` (checklist y limitaciones), README y DEC-012 (actualización).
+- **Archivos tocados:** `backend/app/config.py`, `backend/app/main.py`, `backend/tests/core/test_config.py`, `backend/.env.example`, `.env.docker`, `docker-compose.yml`, `docker-compose.dev.yml`, `docs/CONTRACT.md`, `docs/OBSERVABILITY.md`, `docs/RUNBOOK.md`, `docs/RELEASE.md`, `README.md`, `decisions.md`, `plan.md`, `bitacora.md`.
+- **Verificación:**
+  - `pytest tests/core/test_config.py tests/core/test_logging_utils.py tests/api/test_system.py -q` → **29 passed**.
+  - `docker compose -f docker-compose.yml config --quiet` y `.dev.yml` → **exit 0**.
+  - `verify.ps1` completo → **All checks passed** (backend **196 passed**, frontend **67 passed**, build OK).
+- **Hallazgos / riesgos / deuda:**
+  - Un `LOG_LEVEL` inválido ahora es un fallo de arranque deliberado (fail-fast); hay que corregir el `.env` en lugar de degradar silenciosamente.
+  - No hay rotación de logs integrada; se delega en el orquestador (documentado en RELEASE).
+  - Queda como única deuda de observabilidad el exportador Prometheus/OpenTelemetry.
+- **Decisiones:** actualización de DEC-012 (sin nueva DEC).
+- **Siguiente paso:** reejecutar `verify.ps1`, validar `docker compose config` y cerrar PLAN-050 cuando Docker esté disponible.
+
 ## 2026-11-13 — Producto/Infra (PLAN-043: alcance de `electron/`)
 
 - **Objetivo (Plan ID):** PLAN-043 (decisión explícita sobre el empaquetado Electron).

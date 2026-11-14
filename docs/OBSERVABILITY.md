@@ -17,8 +17,7 @@ Cada registro se emite como **una línea JSON** en `stdout` (formato en
 | `timestamp` | `record.created` | ISO 8601 en UTC |
 | `level`, `logger`, `message` | estándar | `message` ya interpolado |
 | `scan_id`, `task_id` | `ScanLoggerAdapter` | correlación scan ↔ tarea Celery |
-| `event` | `extra` | `scan.started`, `scan.completed`, `scan.failed`, `scan.not_found`, `scan.progress_error`, `scan.timeout`, `scan.skipped`, `scan.persist_error` |
-| `status`, `duration_ms`, `hosts_found`, `ports_found` | `extra` | solo si se informan |
+| `event` | `extra` | `scan.started`, `scan.completed`, `scan.failed`, `scan.not_found`, `scan.progress_error`, `scan.timeout`, `scan.skipped`, `scan.persist_error` || `status`, `duration_ms`, `hosts_found`, `ports_found` | `extra` | solo si se informan |
 | `exception` | `exc_info` | traceback completo |
 
 Uso en tareas:
@@ -33,6 +32,13 @@ scan_log.info("Scan started", extra={"event": "scan.started"})
 `get_scan_logger` acepta un `logger` opcional (por defecto `app.scans`) para
 tests o sinks alternativos. `configure_logging(...)` es idempotente por logger:
 no duplica handlers si se invoca varias veces.
+
+### Nivel de log
+
+El nivel se controla con `LOG_LEVEL` (`DEBUG`, `INFO`, `WARNING`, `ERROR`,
+`CRITICAL`; se normaliza a mayúsculas) y se aplica al arrancar. Por defecto es
+`INFO` en producción y `DEBUG` en el compose de desarrollo. Un valor inválido
+impide el arranque con un error de configuración explícito.
 
 Filtrar un scan en local:
 
@@ -96,7 +102,5 @@ simulada y métricas con/sin datos. Todo determinista y sin red (DEC-004/010).
 
 - No hay exportador Prometheus/OpenTelemetry; si se necesita, se añadirá como
   decisión aparte manteniendo el endpoint actual como contrato estable.
-- El nivel de log es fijo en `INFO` al arrancar; ajustarlo por entorno queda
-  para una iteración de configuración.
 - Las métricas se calculan por consulta; con volúmenes grandes conviene caché o
   agregados materializados.

@@ -5,6 +5,8 @@ from typing import List
 
 DEFAULT_SECRET_KEY = "your-secret-key-change-in-production"
 
+VALID_LOG_LEVELS = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}
+
 
 class Settings(BaseSettings):
     """Application configuration settings"""
@@ -47,6 +49,20 @@ class Settings(BaseSettings):
     
     # Security
     secret_key: str = DEFAULT_SECRET_KEY
+
+    # Logging
+    log_level: str = "INFO"
+
+    @field_validator("log_level", mode="before")
+    @classmethod
+    def validate_log_level(cls, value: str) -> str:
+        """Normalize and validate the log level (e.g. ``debug`` → ``DEBUG``)."""
+        level = str(value).strip().upper()
+        if level not in VALID_LOG_LEVELS:
+            raise ValueError(
+                f"LOG_LEVEL must be one of {', '.join(sorted(VALID_LOG_LEVELS))}"
+            )
+        return level
 
     @field_validator("cors_origins")
     @classmethod

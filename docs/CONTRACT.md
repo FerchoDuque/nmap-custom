@@ -193,7 +193,7 @@ Endpoints de solo lectura para contenedores y smoke checks; no exponen datos de 
 
 ### 3.7 Logging estructurado
 
-Los logs del backend se emiten como **una línea JSON** (`app/core/logging_utils.py`) con `timestamp`, `level`, `logger`, `message` y, si aplican, `scan_id`, `task_id`, `event`, `status`, `duration_ms`, `hosts_found`, `ports_found` y `exception` (traceback). Las tareas usan `get_scan_logger(scan_id, task_id=...)` con eventos `scan.started`, `scan.completed`, `scan.failed`, `scan.not_found` y `scan.progress_error`.
+Los logs del backend se emiten como **una línea JSON** (`app/core/logging_utils.py`) con `timestamp`, `level`, `logger`, `message` y, si aplican, `scan_id`, `task_id`, `event`, `status`, `duration_ms`, `hosts_found`, `ports_found` y `exception` (traceback). El nivel se controla con `LOG_LEVEL` (`DEBUG`…`CRITICAL`, default `INFO`). Las tareas usan `get_scan_logger(scan_id, task_id=...)` con eventos `scan.started`, `scan.completed`, `scan.failed`, `scan.not_found` y `scan.progress_error`.
 
 ---
 

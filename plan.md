@@ -1,7 +1,7 @@
 # plan.md — Roadmap y grafo de ejecución
 
 > Estado vivo del trabajo. Se actualiza en cada iteración del loop definido en [`agents.md`](agents.md).
-> Última actualización: 2026-11-13 (PLAN-021/022/031/032/040/041/042/043 cerrados y PLAN-050 en curso; runbooks, observabilidad, resiliencia y alcance definido)
+> Última actualización: 2026-11-14 (PLAN-021/022/031/032/040/041/042/043 cerrados y PLAN-050 en curso; `LOG_LEVEL` configurable y deuda de observabilidad reducida)
 
 ## 1. Visión y objetivo
 
@@ -140,7 +140,7 @@ Se considerará el objetivo alcanzado cuando:
 
 1. **PLAN-050 (cierre):** dry-run de release con Docker activo (`make build`, `make up`, smoke tests 1–2) y, en entorno autorizado, smoke tests 3–10 (DEC-004).
 2. **PLAN-023 (validación):** disparo real de un schedule en entorno autorizado y confirmación de `next_run_at`/contadores.
-3. **Observabilidad (deuda):** nivel de log configurable por entorno y exportador Prometheus/OpenTelemetry si se requiere.
+3. **Observabilidad (deuda restante):** exportador Prometheus/OpenTelemetry si se requiere (el nivel de log ya es configurable con `LOG_LEVEL`).
 4. **Salida esperada:** release 0.1.0 aprobado con evidencia, flujo completo validado en entorno autorizado y deuda técnica acotada.
 
 ## 11. Historial de cambios del plan
@@ -165,3 +165,4 @@ Se considerará el objetivo alcanzado cuando:
 - **2026-11-13:** **PLAN-032 cerrado** — `execute_scan` con timeout (`DEFAULT_SCAN_TIMEOUT`), idempotencia (skip de estados terminales), persistencia segura de errores (truncado 500, DB enmascarada) y aislamiento de fallos por host; `RESOLVE_HOSTNAMES` configurable y DNS inverso desactivado en tests; handler global `500` genérico. Verificación: `test_resilience.py` (**9**) + `test_error_handling.py` (**3**); backend **190 passed** en ~2.4 s.
 - **2026-11-13:** **PLAN-042 cerrado y PLAN-050 iniciado** — `docs/RUNBOOK.md` (operación, salud, diagnóstico por síntoma, configuración crítica y seguridad) y `docs/RELEASE.md` (SemVer/tagging, checklist, smoke tests 1–10, rollback y limitaciones 0.1.0); README con índice documental, variables de resiliencia y notas de seguridad; compose sin `version` obsoleto y `API_RELOAD=false` en prod. Verificación: `docker compose config` en prod y dev → exit 0; comandos `make` del runbook contrastados con el Makefile. **Limitación:** dry-run real pendiente (Docker Desktop no disponible).
 - **2026-11-13:** **PLAN-043 cerrado** — DEC-014 aplaza el empaquetado Electron fuera de 0.1.0; `electron/` estaba vacío y no versionado, así que no se conserva placeholder. README y grafo reflejan el aplazamiento; reapertura solo con una `DEC` que defina alcance y distribución.
+- **2026-11-14:** **deuda PLAN-040 resuelta (nivel de log)** — `LOG_LEVEL` (`DEBUG`…`CRITICAL`, normalizado a mayúsculas y validado) aplicado al arranque; `INFO` en prod y `DEBUG` en dev, propagado a compose/`.env`. Tests: `TestLogLevel` (**6**); documentado en contrato §3.7, `OBSERVABILITY`, `RUNBOOK`, `RELEASE` y README. Queda solo el exportador Prometheus/OpenTelemetry.

@@ -50,6 +50,7 @@ services:
       - API_HOST=0.0.0.0
       - API_PORT=8000
       - API_RELOAD=false
+      - LOG_LEVEL=INFO
       - CORS_ORIGINS=["http://localhost", "http://localhost:80"]
     ports:
       - "8001:8000"
@@ -80,6 +81,7 @@ services:
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - LOG_LEVEL=INFO
     depends_on:
       db:
         condition: service_healthy

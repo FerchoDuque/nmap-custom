@@ -37,6 +37,7 @@ git push origin v0.1.0
 - [ ] Límites revisados: `MAX_HOSTS_PER_SCAN`, `MAX_PORTS_PER_SCAN`,
       `DEFAULT_SCAN_TIMEOUT`, `MAX_CONCURRENT_SCANS`.
 - [ ] `RESOLVE_HOSTNAMES` acorde al entorno (sin DNS ⇒ `false`).
+- [ ] `LOG_LEVEL` acorde al entorno (`INFO` en producción, `DEBUG` solo en dev).
 - [ ] `docker compose config` resuelve sin errores.
 - [ ] Contenedores `backend`/`celery` solo con `NET_RAW`/`NET_ADMIN`; `beat`
       sin capacidades; ninguno en `privileged`.
@@ -107,7 +108,8 @@ en vuelo pueden reintentarse porque los scans terminales no se reejecutan.
 - Sin E2E real en CI: WebSocket, red y Beat se validan manualmente en entorno
   autorizado (DEC-004).
 - Sin exportador Prometheus/OpenTelemetry; `/api/metrics` es el contrato estable.
-- Nivel de log fijo en `INFO` al arrancar.
+- Nivel de log configurable con `LOG_LEVEL` (`INFO` en prod, `DEBUG` en dev);
+  no hay rotación de logs integrada (gestionarla en el orquestador).
 - `celery` corre con `--pool=solo` por defecto (una tarea a la vez).
 - Escaneos SYN/UDP/OS requieren Linux con capacidades; en otros entornos usar
   `tcp_connect`.
