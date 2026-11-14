@@ -241,6 +241,23 @@
 
 ---
 
+## DEC-014 — `electron/` aplazado fuera del alcance 0.1.0 (sin entregable ni placeholder activo)
+- **Fecha:** 2026-11-13
+- **Estado:** accepted
+- **Contexto:** `electron/` existía como directorio vacío y no versionado (git no registra directorios vacíos); el README lo anunciaba como "future" y el roadmap lo listaba como pendiente. Mantener esa ambigüedad sugiere un entregable inexistente y compite con el objetivo real de 0.1.0: backend/frontend web estables, observables y desplegables.
+- **Decisión:** aplazar el empaquetado Electron fuera del alcance activo de 0.1.0.
+  - No se mantiene un placeholder vacío ni se crea estructura de empaquetado.
+  - README y roadmap lo marcan explícitamente como **aplazado** y remiten a esta decisión.
+  - Se reevaluará solo con una `DEC` nueva que defina alcance, distribución (firma/auto-update) y coste de mantenimiento.
+- **Alternativas consideradas:** implementar ahora (descartado: multiplica superficie de build/distribución sin validar antes el flujo web); retirarlo del todo del roadmap (descartado: pierde la intención de producto a futuro).
+- **Consecuencias:**
+  - (+) Alcance de release nítido: nada en el árbol sugiere un entregable Electron; no hay deuda de empaquetado sin dueño.
+  - (-) Si se retoma, hay que crear el proyecto desde cero (sin andamiaje previo).
+- **Impacto en plan/grafo:** cierra `PLAN-043`; no bloquea ningún otro ítem (dependencia `PLAN-001`).
+- **Verificación:** `Test-Path electron` → `True` (directorio vacío) y `git ls-files electron` → vacío; README usa ahora "aplazado (DEC-014)".
+
+---
+
 ## Plantilla para nuevas decisiones
 
 ```md

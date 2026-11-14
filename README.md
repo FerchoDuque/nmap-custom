@@ -190,7 +190,7 @@ nmap-custom/
 │   │   ├── types/           # TypeScript types
 │   │   └── App.tsx
 │   └── package.json
-├── electron/                # Electron desktop app (future)
+├── electron/                # Aplazado (ver DEC-014); sin entregable en 0.1.0
 └── docs/                    # Documentation
 ```
 
@@ -321,7 +321,7 @@ See [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for incident procedures and
 - [x] FastAPI backend
 - [x] React frontend foundation
 - [ ] Complete UI components (ScanConfig, NetworkTopology, etc.)
-- [ ] Electron desktop packaging
+- [ ] Electron desktop packaging — aplazado (DEC-014)
 - [ ] Advanced network visualization
 - [ ] Vulnerability detection integration
 - [ ] Report generation

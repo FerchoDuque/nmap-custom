@@ -29,6 +29,23 @@
 
 ---
 
+## 2026-11-13 — Producto/Infra (PLAN-043: alcance de `electron/`)
+
+- **Objetivo (Plan ID):** PLAN-043 (decisión explícita sobre el empaquetado Electron).
+- **Contexto/insumos:** `electron/` existía como directorio vacío y no versionado (`git ls-files electron` vacío); el README lo anunciaba como "future" y el roadmap lo listaba como pendiente, lo que sugería un entregable inexistente.
+- **Acciones realizadas:**
+  - **DEC-014:** empaquetado Electron **aplazado** fuera del alcance de 0.1.0; no se mantiene placeholder activo y se reevaluará solo con una `DEC` nueva que defina alcance, distribución (firma/auto-update) y coste.
+  - README: árbol de directorios y roadmap marcan Electron como aplazado (DEC-014).
+  - Plan/grafo: `PLAN-043` → `done`, nodo `EL` anotado con el aplazamiento y backlog actualizado.
+- **Archivos tocados:** `decisions.md`, `README.md`, `plan.md`, `bitacora.md`.
+- **Verificación:**
+  - `Test-Path electron` → `True` (vacío) y `git ls-files electron` → sin archivos.
+  - Revisión cruzada: el alcance declarado en `plan.md` §1 ya excluía Electron del alcance inmediato.
+  - Cambio documental sin código ejecutable: no aplica TDD (excepción justificada según `agents.md` §4).
+- **Hallazgos / riesgos / deuda:** si se retoma Electron habrá que crear el proyecto desde cero; no hay impacto en el release 0.1.0 ni dependencias bloqueadas.
+- **Decisiones:** DEC-014.
+- **Siguiente paso:** cierre de PLAN-050 con Docker activo y validación real de schedules (PLAN-023) en entorno autorizado.
+
 ## 2026-11-13 — Docs/Release (PLAN-042 cerrado, PLAN-050 iniciado)
 
 - **Objetivo (Plan ID):** PLAN-042 (runbooks y documentación profesional) y PLAN-050 (checklist de release y hardening).

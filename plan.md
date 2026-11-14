@@ -1,7 +1,7 @@
 # plan.md — Roadmap y grafo de ejecución
 
 > Estado vivo del trabajo. Se actualiza en cada iteración del loop definido en [`agents.md`](agents.md).
-> Última actualización: 2026-11-13 (PLAN-021/022/031/032/040/041/042 cerrados y PLAN-050 en curso; runbooks, observabilidad, resiliencia y checklist de release)
+> Última actualización: 2026-11-13 (PLAN-021/022/031/032/040/041/042/043 cerrados y PLAN-050 en curso; runbooks, observabilidad, resiliencia y alcance definido)
 
 ## 1. Visión y objetivo
 
@@ -54,7 +54,7 @@ graph TD
     OBS[PLAN-040 Observabilidad, logging y métricas]
     DX[PLAN-041 CI, lint, typing, build reproducible]
     DOC[PLAN-042 Docs, runbooks y release readiness]
-    EL[PLAN-043 Estrategia electron/alcance]
+    EL[PLAN-043 electron/ aplazado (DEC-014)]
   end
 
   AG --> PL --> BI
@@ -105,7 +105,7 @@ graph TD
 | PLAN-040 | Observabilidad y operabilidad | Infra/Backend | done | Media | PLAN-032 | Logging estructurado consistente, correlación de scans/tareas, healthchecks útiles y métricas básicas de operación | **Completado:** `core/logging_utils.py` (JSON por línea, `ScanLoggerAdapter` con `scan_id`/`task_id`, `configure_logging` idempotente, `exc_info` tolerante); `tasks.py` emite `scan.started/completed/failed/not_found/progress_error`; `api/system.py` con `/api/health` (`SELECT 1`, `503` degradado) y `/api/metrics` (conteos por estado, activos, hosts/ports totales); `HEALTHCHECK` del Dockerfile sin `requests`. Tests: `test_logging_utils.py` + `test_system.py` (**13**); backend **175 passed**. Docs: contrato §3.6/§3.7 y `docs/OBSERVABILITY.md` |
 | PLAN-041 | Pipeline de calidad reproducible (CI/DX) | Infra/QA | done | Alta | PLAN-030 | Checks automatizados (lint, type/build, tests) y entorno reproducible documentado; pasos claros para dev/prod | **Completado:** `scripts/verify.ps1`/`scripts/verify.sh` (backend pytest con SQLite in-memory por defecto, frontend lint/typecheck/`vitest run`/build, `--skip-build`); `make check`/`make verify`; scripts `typecheck` y `test:run`; workflow `.github/workflows/ci.yml` (Python 3.11/Node 20) y `docs/CI.md`. Verificación: `verify.ps1` → **All checks passed** (backend **162**, frontend **67**, build OK) |
 | PLAN-042 | Documentación profesional y runbooks | Docs | done | Media | PLAN-023, PLAN-040, PLAN-041 | README/API/config/deploy/troubleshooting/runbooks actualizados, limitaciones conocidas y guía de operación segura | **Completado:** `docs/RUNBOOK.md` (servicios/puertos, ciclo de vida, salud, diagnóstico por síntoma, configuración crítica y seguridad operativa) y `docs/RELEASE.md` (versionado, checklist, smoke tests 1–10, rollback y limitaciones 0.1.0); README con índice documental, variables de resiliencia y notas de seguridad; contrato §3.4/§3.6/§3.7 y `docs/OBSERVABILITY.md` alineados. Verificación cruzada con `docker compose config` (prod/dev, exit 0) y comandos `make` existentes |
-| PLAN-043 | Decidir y acotar estrategia de `electron/` | Producto/Infra | todo | Baja | PLAN-001 | DEC explícita: implementar, aplazar o retirar del alcance activo; plan/grafo ajustados | `DEC-xxx` + actualización de backlog |
+| PLAN-043 | Decidir y acotar estrategia de `electron/` | Producto/Infra | done | Baja | PLAN-001 | DEC explícita: implementar, aplazar o retirar del alcance activo; plan/grafo ajustados | **Completado:** DEC-014 aplaza el empaquetado Electron fuera de 0.1.0; `electron/` estaba vacío y no versionado, por lo que no se mantiene placeholder activo. README/roadmap lo marcan como aplazado y el grafo refleja la decisión. Reapertura solo con nueva `DEC` que defina alcance/distribución |
 | PLAN-050 | Criterios de release y hardening final | Release | doing | Media | PLAN-022, PLAN-023, PLAN-030, PLAN-031, PLAN-032, PLAN-041, PLAN-042 | Checklist de release aprobado, versiones/tagging, configuración prod segura, smoke tests y rollback básico documentados | **En curso:** `docs/RELEASE.md` con SemVer/tagging, checklist de calidad/seguridad/DB/docs, smoke tests 1–10 y rollback con backup; `docker-compose.yml` sin `version` obsoleto y con `API_RELOAD=false` en prod; ambos compose validados (`docker compose config` exit 0). **Pendiente:** dry-run real (`build`/`up` + smoke tests) — Docker Desktop no disponible en este entorno |
 
 ## 7. Hallazgos de auditoría incorporados (PLAN-002)
@@ -140,9 +140,8 @@ Se considerará el objetivo alcanzado cuando:
 
 1. **PLAN-050 (cierre):** dry-run de release con Docker activo (`make build`, `make up`, smoke tests 1–2) y, en entorno autorizado, smoke tests 3–10 (DEC-004).
 2. **PLAN-023 (validación):** disparo real de un schedule en entorno autorizado y confirmación de `next_run_at`/contadores.
-3. **PLAN-043:** decisión explícita sobre `electron/` (implementar, aplazar o retirar).
-4. **Observabilidad (deuda):** nivel de log configurable por entorno y exportador Prometheus/OpenTelemetry si se requiere.
-5. **Salida esperada:** release 0.1.0 aprobado con evidencia, flujo completo validado en entorno autorizado y deuda técnica acotada.
+3. **Observabilidad (deuda):** nivel de log configurable por entorno y exportador Prometheus/OpenTelemetry si se requiere.
+4. **Salida esperada:** release 0.1.0 aprobado con evidencia, flujo completo validado en entorno autorizado y deuda técnica acotada.
 
 ## 11. Historial de cambios del plan
 
@@ -165,3 +164,4 @@ Se considerará el objetivo alcanzado cuando:
 - **2026-11-13:** **PLAN-040 cerrado** — `core/logging_utils.py` (JSON por línea, `ScanLoggerAdapter` con `scan_id`/`task_id`, `configure_logging` idempotente y resolución robusta de `exc_info` para Python 3.14); `tasks.py` emite eventos correlacionados (`scan.started/completed/failed/not_found/progress_error`); `api/system.py` con `/api/health` (SELECT 1 → `503` degradado) y `/api/metrics` (conteos por estado, activos y totales); `HEALTHCHECK` del Dockerfile sin `requests`. Verificación: `test_logging_utils.py`+`test_system.py` (**13**) y backend **175 passed**. Docs: contrato §3.6/§3.7, `docs/OBSERVABILITY.md` y README.
 - **2026-11-13:** **PLAN-032 cerrado** — `execute_scan` con timeout (`DEFAULT_SCAN_TIMEOUT`), idempotencia (skip de estados terminales), persistencia segura de errores (truncado 500, DB enmascarada) y aislamiento de fallos por host; `RESOLVE_HOSTNAMES` configurable y DNS inverso desactivado en tests; handler global `500` genérico. Verificación: `test_resilience.py` (**9**) + `test_error_handling.py` (**3**); backend **190 passed** en ~2.4 s.
 - **2026-11-13:** **PLAN-042 cerrado y PLAN-050 iniciado** — `docs/RUNBOOK.md` (operación, salud, diagnóstico por síntoma, configuración crítica y seguridad) y `docs/RELEASE.md` (SemVer/tagging, checklist, smoke tests 1–10, rollback y limitaciones 0.1.0); README con índice documental, variables de resiliencia y notas de seguridad; compose sin `version` obsoleto y `API_RELOAD=false` en prod. Verificación: `docker compose config` en prod y dev → exit 0; comandos `make` del runbook contrastados con el Makefile. **Limitación:** dry-run real pendiente (Docker Desktop no disponible).
+- **2026-11-13:** **PLAN-043 cerrado** — DEC-014 aplaza el empaquetado Electron fuera de 0.1.0; `electron/` estaba vacío y no versionado, así que no se conserva placeholder. README y grafo reflejan el aplazamiento; reapertura solo con una `DEC` que defina alcance y distribución.
