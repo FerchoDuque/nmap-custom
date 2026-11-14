@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     env: str = "development"
     
     # Database - PostgreSQL by default, SQLite for local dev
-    database_url: str = "postgresql://scanner:scanner123@db:5432/network_scanner"
+    database_url: str = "postgresql+psycopg2://scanner:scanner123@db:5432/network_scanner"
     
     # API Configuration
     api_host: str = "0.0.0.0"

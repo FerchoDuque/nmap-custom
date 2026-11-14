@@ -65,7 +65,7 @@ docker-compose ps
 1. `docker-compose ps` ⇒ `celery` y `redis` deben estar `Up/healthy`.
 2. `docker-compose logs --tail=100 celery` buscando errores de conexión al
    broker.
-3. `docker-compose exec celery celery -A app.celery_app inspect active` (el
+3. `docker-compose exec celery celery -A app.celery_app:celery_app inspect active` (el
    worker usa `--pool=solo`).
 4. Reiniciar worker: `make restart-celery`.
 
@@ -120,7 +120,7 @@ Backup/restore: ver la sección **Backup & Restore** de [`DOCKER.md`](DOCKER.md)
 
 | Variable | Default | Efecto |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://...` | Conexión a PostgreSQL/SQLite |
+| `DATABASE_URL` | `postgresql+psycopg2://...` | Conexión a PostgreSQL/SQLite (driver psycopg2 pinneado) |
 | `CORS_ORIGINS` | orígenes locales | Debe ser explícito; `*` falla al arrancar |
 | `SECRET_KEY` | placeholder | Sustituir en producción (warning al arrancar) |
 | `MAX_HOSTS_PER_SCAN` | `1024` | Rechazo `422` por encima del límite |

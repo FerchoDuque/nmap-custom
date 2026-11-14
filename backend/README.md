@@ -51,7 +51,7 @@ redis-server
 
 2. Start Celery worker:
 ```bash
-celery -A app.celery_app worker --loglevel=info --pool=solo
+celery -A app.celery_app:celery_app worker --loglevel=info --pool=solo
 ```
 
 3. Start FastAPI server:

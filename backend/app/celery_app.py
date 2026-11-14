@@ -2,12 +2,46 @@ from app.config import settings
 
 try:
     from celery import Celery
+except ImportError:  # pragma: no cover - exercised only without Celery
+    Celery = None
 
+
+if Celery is None:  # pragma: no cover - test environments without Celery
+    # Fallback so tests can import the app without the optional dependency.
+    class _DummyControl:
+        def revoke(self, *args, **kwargs):
+            return None
+
+    class _DummyCeleryApp:
+        control = _DummyControl()
+
+        def task(self, *args, **kwargs):
+            # Mirror Celery's `@app.task` and `@app.task(...)` usage.
+            if len(args) == 1 and callable(args[0]) and not kwargs:
+                return args[0]
+
+            def decorator(func):
+                return func
+
+            return decorator
+
+        def autodiscover_tasks(self, *args, **kwargs):
+            return None
+
+        @property
+        def conf(self):
+            return self
+
+        def update(self, *args, **kwargs):
+            return None
+
+    celery_app = _DummyCeleryApp()
+else:
     # Create Celery app
     celery_app = Celery(
         "network_scanner",
         broker=settings.celery_broker_url,
-        backend=settings.celery_result_backend
+        backend=settings.celery_result_backend,
     )
 
     # Configure Celery
@@ -28,37 +62,8 @@ try:
         },
     )
 
-    # Autodiscover tasks from app.tasks module
-    celery_app.autodiscover_tasks(['app.tasks'])
-
-    # Import tasks to ensure they're registered
+    # Autodiscover the `app.tasks` module and import it eagerly so the tasks
+    # are registered on the worker. Import errors are NOT swallowed: a broken
+    # task module must fail fast instead of silently starting a dummy app.
+    celery_app.autodiscover_tasks(["app"])
     from app import tasks  # noqa: F401, E402
-except ImportError:
-    # Fallback for test environments without Celery installed.
-    class _DummyControl:
-        def revoke(self, *args, **kwargs):
-            return None
-
-    class _DummyCeleryApp:
-        control = _DummyControl()
-
-        def task(self, *args, **kwargs):
-            # Mirror Celery's `@app.task` and `@app.task(...)` usage.
-            if len(args) == 1 and callable(args[0]) and not kwargs:
-                return args[0]
-
-            def decorator(func):
-                return func
-            return decorator
-
-        def autodiscover_tasks(self, *args, **kwargs):
-            return None
-
-        @property
-        def conf(self):
-            return self
-
-        def update(self, *args, **kwargs):
-            return None
-
-    celery_app = _DummyCeleryApp()

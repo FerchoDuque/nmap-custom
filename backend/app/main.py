@@ -9,7 +9,7 @@ from app.database import init_db
 from app.api import scans, websocket, schedules, system
 
 # Configure structured JSON logging (idempotent).
-configure_logging(level=settings.log_level)
+configure_logging(level=settings.log_level, include_uvicorn=True)
 
 logger = logging.getLogger(__name__)
 

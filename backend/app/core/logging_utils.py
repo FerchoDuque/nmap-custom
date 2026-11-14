@@ -93,14 +93,24 @@ def get_scan_logger(
     return ScanLoggerAdapter(logger or logging.getLogger("app.scans"), extra)
 
 
+UVICORN_LOGGERS = ("uvicorn", "uvicorn.error", "uvicorn.access")
+
+
 def configure_logging(
     level: str = "INFO",
     logger: Optional[logging.Logger] = None,
     stream=None,
+    include_uvicorn: bool = False,
 ) -> logging.Handler:
-    """Configure JSON logging once for the given logger (root by default)."""
+    """Configure JSON logging once for the given logger (root by default).
+
+    ``include_uvicorn`` also routes uvicorn's own loggers (which do not
+    propagate by default) through the same JSON handler, so access/error logs
+    keep the one-JSON-object-per-line format.
+    """
     target = logger or logging.getLogger()
-    target.setLevel(getattr(logging, str(level).upper(), logging.INFO))
+    level_value = getattr(logging, str(level).upper(), logging.INFO)
+    target.setLevel(level_value)
 
     handler = next(
         (
@@ -115,5 +125,13 @@ def configure_logging(
         handler.setFormatter(JsonFormatter())
         handler._network_scanner_json = True  # type: ignore[attr-defined]
         target.addHandler(handler)
+
+    if include_uvicorn:
+        for name in UVICORN_LOGGERS:
+            uvicorn_logger = logging.getLogger(name)
+            uvicorn_logger.setLevel(level_value)
+            uvicorn_logger.handlers = [handler]
+            # Uvicorn installs propagate=False; keep it to avoid duplicates.
+            uvicorn_logger.propagate = False
 
     return handler

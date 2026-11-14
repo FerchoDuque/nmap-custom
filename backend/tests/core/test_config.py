@@ -57,6 +57,12 @@ class TestResourceLimits:
         assert settings.max_ports_per_scan == 1000
 
 
+class TestDatabaseDriver:
+    def test_default_url_uses_the_psycopg2_driver(self):
+        default = Settings.model_fields["database_url"].default
+        assert default.startswith("postgresql+psycopg2://")
+
+
 class TestLogLevel:
     def test_defaults_to_info(self):
         assert _settings().log_level == "INFO"

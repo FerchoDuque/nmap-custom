@@ -33,7 +33,7 @@ services:
     container_name: scanner-backend-dev
     environment:
       - ENV=development
-      - DATABASE_URL=postgresql://scanner:scanner123@db:5432/network_scanner
+      - DATABASE_URL=postgresql+psycopg2://scanner:scanner123@db:5432/network_scanner
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -65,7 +65,7 @@ services:
     container_name: scanner-celery-dev
     environment:
       - ENV=development
-      - DATABASE_URL=postgresql://scanner:scanner123@db:5432/network_scanner
+      - DATABASE_URL=postgresql+psycopg2://scanner:scanner123@db:5432/network_scanner
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -81,7 +81,13 @@ services:
     cap_add:
       - NET_RAW
       - NET_ADMIN
-    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=debug", "--pool=solo"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.celery_app:celery_app inspect ping -d celery@$$HOSTNAME --timeout 5 >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    command: ["celery", "-A", "app.celery_app:celery_app", "worker", "--loglevel=debug", "--pool=solo"]
 
   # Celery Beat (Development, scheduler only: no scan privileges)
   beat:
@@ -91,7 +97,7 @@ services:
     container_name: scanner-beat-dev
     environment:
       - ENV=development
-      - DATABASE_URL=postgresql://scanner:scanner123@db:5432/network_scanner
+      - DATABASE_URL=postgresql+psycopg2://scanner:scanner123@db:5432/network_scanner
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -104,7 +110,10 @@ services:
     networks:
       - scanner-network
     restart: unless-stopped
-    command: ["celery", "-A", "app.celery_app", "beat", "--loglevel=debug"]
+    # Beat does not serve HTTP; the backend image HEALTHCHECK does not apply.
+    healthcheck:
+      disable: true
+    command: ["celery", "-A", "app.celery_app:celery_app", "beat", "--loglevel=debug"]
 
   metasploitable:
     image: tleemcjr/metasploitable2

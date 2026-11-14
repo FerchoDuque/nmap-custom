@@ -156,3 +156,42 @@ def test_configure_logging_sets_level(level):
     finally:
         logger.handlers = original_handlers
         logger.setLevel(original_level)
+
+
+def test_configure_logging_routes_uvicorn_loggers_to_json():
+    stream = io.StringIO()
+    owner = logging.getLogger("test.uvicorn.owner")
+    names = ("uvicorn", "uvicorn.error", "uvicorn.access")
+    saved = {
+        name: (
+            list(logging.getLogger(name).handlers),
+            logging.getLogger(name).level,
+            logging.getLogger(name).propagate,
+        )
+        for name in names
+    }
+    saved_owner = (list(owner.handlers), owner.level)
+
+    try:
+        configure_logging(
+            level="INFO", logger=owner, stream=stream, include_uvicorn=True
+        )
+
+        access = logging.getLogger("uvicorn.access")
+        assert access.propagate is False
+        assert len(access.handlers) == 1
+        assert isinstance(access.handlers[0].formatter, JsonFormatter)
+
+        access.info("GET /api/health 200", extra={"scan_id": 1})
+        payload = json.loads(stream.getvalue().strip())
+        assert payload["logger"] == "uvicorn.access"
+        assert payload["message"] == "GET /api/health 200"
+        assert payload["scan_id"] == 1
+    finally:
+        owner.handlers = saved_owner[0]
+        owner.setLevel(saved_owner[1])
+        for name, (handlers, level, propagate) in saved.items():
+            logger = logging.getLogger(name)
+            logger.handlers = handlers
+            logger.setLevel(level)
+            logger.propagate = propagate

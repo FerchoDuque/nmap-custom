@@ -42,7 +42,7 @@ services:
     container_name: scanner-backend
     environment:
       - ENV=production
-      - DATABASE_URL=postgresql://scanner:scanner123@db:5432/network_scanner
+      - DATABASE_URL=postgresql+psycopg2://scanner:scanner123@db:5432/network_scanner
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -76,7 +76,7 @@ services:
     container_name: scanner-celery
     environment:
       - ENV=production
-      - DATABASE_URL=postgresql://scanner:scanner123@db:5432/network_scanner
+      - DATABASE_URL=postgresql+psycopg2://scanner:scanner123@db:5432/network_scanner
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -93,7 +93,13 @@ services:
       - NET_RAW
       - NET_ADMIN
     restart: unless-stopped
-    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "--pool=solo"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.celery_app:celery_app inspect ping -d celery@$$HOSTNAME --timeout 5 >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    command: ["celery", "-A", "app.celery_app:celery_app", "worker", "--loglevel=info", "--pool=solo"]
 
   # Celery Beat (scheduler only: DB bookkeeping + enqueue, no scan privileges)
   beat:
@@ -103,7 +109,7 @@ services:
     container_name: scanner-beat
     environment:
       - ENV=production
-      - DATABASE_URL=postgresql://scanner:scanner123@db:5432/network_scanner
+      - DATABASE_URL=postgresql+psycopg2://scanner:scanner123@db:5432/network_scanner
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -116,7 +122,10 @@ services:
     networks:
       - scanner-network
     restart: unless-stopped
-    command: ["celery", "-A", "app.celery_app", "beat", "--loglevel=info"]
+    # Beat does not serve HTTP; the backend image HEALTHCHECK does not apply.
+    healthcheck:
+      disable: true
+    command: ["celery", "-A", "app.celery_app:celery_app", "beat", "--loglevel=info"]
 
   # React Frontend with Nginx
   frontend:
