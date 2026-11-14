@@ -1,7 +1,7 @@
 # plan.md — Roadmap y grafo de ejecución
 
 > Estado vivo del trabajo. Se actualiza en cada iteración del loop definido en [`agents.md`](agents.md).
-> Última actualización: 2026-11-14 (PLAN-021/022/031/032/040/041/042/043 cerrados y PLAN-050 en curso; `LOG_LEVEL` configurable y deuda de observabilidad reducida)
+> Última actualización: 2026-11-14 (PLAN-021/022/031/032/040/041/042/043/050 cerrados; dry-run de release 1–2 validado, `LOG_LEVEL` configurable y wiring de despliegue corregido)
 
 ## 1. Visión y objetivo
 
@@ -106,7 +106,7 @@ graph TD
 | PLAN-041 | Pipeline de calidad reproducible (CI/DX) | Infra/QA | done | Alta | PLAN-030 | Checks automatizados (lint, type/build, tests) y entorno reproducible documentado; pasos claros para dev/prod | **Completado:** `scripts/verify.ps1`/`scripts/verify.sh` (backend pytest con SQLite in-memory por defecto, frontend lint/typecheck/`vitest run`/build, `--skip-build`); `make check`/`make verify`; scripts `typecheck` y `test:run`; workflow `.github/workflows/ci.yml` (Python 3.11/Node 20) y `docs/CI.md`. Verificación: `verify.ps1` → **All checks passed** (backend **162**, frontend **67**, build OK) |
 | PLAN-042 | Documentación profesional y runbooks | Docs | done | Media | PLAN-023, PLAN-040, PLAN-041 | README/API/config/deploy/troubleshooting/runbooks actualizados, limitaciones conocidas y guía de operación segura | **Completado:** `docs/RUNBOOK.md` (servicios/puertos, ciclo de vida, salud, diagnóstico por síntoma, configuración crítica y seguridad operativa) y `docs/RELEASE.md` (versionado, checklist, smoke tests 1–10, rollback y limitaciones 0.1.0); README con índice documental, variables de resiliencia y notas de seguridad; contrato §3.4/§3.6/§3.7 y `docs/OBSERVABILITY.md` alineados. Verificación cruzada con `docker compose config` (prod/dev, exit 0) y comandos `make` existentes |
 | PLAN-043 | Decidir y acotar estrategia de `electron/` | Producto/Infra | done | Baja | PLAN-001 | DEC explícita: implementar, aplazar o retirar del alcance activo; plan/grafo ajustados | **Completado:** DEC-014 aplaza el empaquetado Electron fuera de 0.1.0; `electron/` estaba vacío y no versionado, por lo que no se mantiene placeholder activo. README/roadmap lo marcan como aplazado y el grafo refleja la decisión. Reapertura solo con nueva `DEC` que defina alcance/distribución |
-| PLAN-050 | Criterios de release y hardening final | Release | doing | Media | PLAN-022, PLAN-023, PLAN-030, PLAN-031, PLAN-032, PLAN-041, PLAN-042 | Checklist de release aprobado, versiones/tagging, configuración prod segura, smoke tests y rollback básico documentados | **En curso:** `docs/RELEASE.md` con SemVer/tagging, checklist de calidad/seguridad/DB/docs, smoke tests 1–10 y rollback con backup; `CHANGELOG.md` con cambios por release y fuentes de versión alineadas (`0.1.0`); `docker-compose.yml` sin `version` obsoleto y con `API_RELOAD=false` en prod; ambos compose validados (`docker compose config` exit 0). **Pendiente:** dry-run real (`build`/`up` + smoke tests) — Docker Desktop no disponible en este entorno |
+| PLAN-050 | Criterios de release y hardening final | Release | done | Media | PLAN-022, PLAN-023, PLAN-030, PLAN-031, PLAN-032, PLAN-041, PLAN-042 | Checklist de release aprobado, versiones/tagging, configuración prod segura, smoke tests y rollback básico documentados | **Completado (dry-run 1–2):** `docs/RELEASE.md` con SemVer/tagging, checklist, smoke tests 1–10 y rollback; `CHANGELOG.md`; compose sin `version` y `API_RELOAD=false`; **6 fallos de wiring corregidos** en el dry-run real (psycopg2, entrada Celery, dummy silencioso, entrypoint, healthchecks de frontend/worker/beat, logs Uvicorn JSON); stack `build`+`up` con db/redis/backend/celery/frontend **healthy** y beat `Up`; `/api/health` 200 y `/api/metrics` JSON. Backend **205 passed + 1 skipped**; verify completo OK. **Limitación:** smoke 3–10 (scans/WS/schedules) diferidos a entorno autorizado (DEC-004); tag `v0.1.0` pendiente de aprobación |
 
 ## 7. Hallazgos de auditoría incorporados (PLAN-002)
 
@@ -138,10 +138,10 @@ Se considerará el objetivo alcanzado cuando:
 
 ## 10. Próxima iteración (loop slice)
 
-1. **PLAN-050 (cierre):** dry-run de release con Docker activo (`make build`, `make up`, smoke tests 1–2) y, en entorno autorizado, smoke tests 3–10 (DEC-004).
-2. **PLAN-023 (validación):** disparo real de un schedule en entorno autorizado y confirmación de `next_run_at`/contadores.
+1. **PLAN-023 (validación):** disparo real de un schedule en entorno autorizado y confirmación de `next_run_at`/contadores.
+2. **Release 0.1.0:** completar smoke tests 3–10 en entorno autorizado, fechar `CHANGELOG` y crear tag `v0.1.0` con aprobación.
 3. **Observabilidad (deuda restante):** exportador Prometheus/OpenTelemetry si se requiere (el nivel de log ya es configurable con `LOG_LEVEL`).
-4. **Salida esperada:** release 0.1.0 aprobado con evidencia, flujo completo validado en entorno autorizado y deuda técnica acotada.
+4. **Salida esperada:** release 0.1.0 etiquetado con evidencia, flujo completo validado en entorno autorizado y deuda técnica acotada.
 
 ## 11. Historial de cambios del plan
 
@@ -167,3 +167,4 @@ Se considerará el objetivo alcanzado cuando:
 - **2026-11-13:** **PLAN-043 cerrado** — DEC-014 aplaza el empaquetado Electron fuera de 0.1.0; `electron/` estaba vacío y no versionado, así que no se conserva placeholder. README y grafo reflejan el aplazamiento; reapertura solo con una `DEC` que defina alcance y distribución.
 - **2026-11-14:** **deuda PLAN-040 resuelta (nivel de log)** — `LOG_LEVEL` (`DEBUG`…`CRITICAL`, normalizado a mayúsculas y validado) aplicado al arranque; `INFO` en prod y `DEBUG` en dev, propagado a compose/`.env`. Tests: `TestLogLevel` (**6**); documentado en contrato §3.7, `OBSERVABILITY`, `RUNBOOK`, `RELEASE` y README. Queda solo el exportador Prometheus/OpenTelemetry.
 - **2026-11-14:** **avance PLAN-050 (release readiness)** — `CHANGELOG.md` con formato Keep a Changelog y cambios agrupados (Added/Changed/Fixed/Security/limitaciones) para `0.1.0`; índice del README y §1/checklist de `docs/RELEASE.md` lo incluyen como fuente de versión. Dry-run de Docker sigue pendiente.
+- **2026-11-14:** **PLAN-050 cerrado (dry-run 1–2)** — build y `up -d` reales: db/redis/backend/celery/frontend **healthy** y beat `Up`; `/api/health` 200, `/api/metrics` JSON y frontend 200; logs JSON también para `uvicorn.access/error`. El dry-run detectó y corrigió **6 fallos de wiring**: driver `postgresql+psycopg2`, entrada `app.celery_app:celery_app`, fallback dummy que enmascaraba imports, parseo de URL en el entrypoint, healthchecks de frontend/worker/beat y logs Uvicorn. Tests de regresión `test_compose_config.py`/`test_celery_app.py`; backend **205 passed + 1 skipped**; `verify.ps1` OK. **Limitación:** smoke 3–10 y tag `v0.1.0` pendientes de entorno autorizado/aprobación (DEC-004, DEC-015).

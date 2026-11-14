@@ -7,6 +7,9 @@ métricas básicas. No requiere servicios externos ni añade dependencias.
 
 Cada registro se emite como **una línea JSON** en `stdout` (formato en
 `backend/app/core/logging_utils.py`, configurado al arrancar en `main.py`).
+`configure_logging(..., include_uvicorn=True)` enruta también los loggers de
+Uvicorn (`uvicorn.access`, `uvicorn.error`) al mismo formatter, así que no hay
+líneas de texto plano mezcladas.
 
 ```json
 {"timestamp":"2026-11-13T18:22:41.512+00:00","level":"INFO","logger":"app.scans","message":"Scan completed","scan_id":42,"task_id":"d1f0-...","event":"scan.completed","status":"completed","hosts_found":6,"ports_found":17}

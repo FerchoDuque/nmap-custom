@@ -29,6 +29,33 @@
 
 ---
 
+## 2026-11-14 — Infra/QA (PLAN-050: dry-run de release y wiring corregido)
+
+- **Objetivo (Plan ID):** PLAN-050 (dry-run real: build, up, smoke 1–2).
+- **Contexto/insumos:** Docker Desktop se inició con aprobación del operador; el alcance de validación se limitó a salud/métricas (sin escaneos reales).
+- **Acciones realizadas:**
+  - `docker compose build` (backend, celery, beat, frontend) y `up -d`; verificación de `ps` y smoke 1–2.
+  - **6 fallos de wiring detectados y corregidos** (TDD donde era posible):
+    1. **DB:** SQLAlchemy 2.1 resuelve `postgresql://` a `psycopg` v3 (no instalado). Se fija `postgresql+psycopg2://` en `config.py`, compose prod/dev y `.env.docker`.
+    2. **Celery CLI:** `-A app.celery_app` buscaba el atributo `celery`; ahora `-A app.celery_app:celery_app` (worker y beat, prod/dev).
+    3. **Fallback silencioso:** `celery_app.py` convertía cualquier `ImportError` (incluido el fallo de DB) en `_DummyCeleryApp`; ahora el dummy solo aplica si falta el paquete `celery` y los imports de `app.tasks` fallan rápido.
+    4. **Entrypoint:** pasaba la URL SQLAlchemy a `psycopg2.connect`; ahora usa `make_url` y omite la espera en backends no PostgreSQL.
+    5. **Healthchecks:** frontend usaba `localhost` (IPv6) → `127.0.0.1`; worker valida con `celery inspect ping`; beat lo tiene deshabilitado (no sirve HTTP).
+    6. **Logs:** `uvicorn.access/error` quedaban en texto plano; `include_uvicorn=True` los enruta al formatter JSON.
+  - Tests de regresión: `tests/core/test_compose_config.py` (entrada Celery, `version` obsoleto, driver psycopg2, parseo del entrypoint) y `tests/core/test_celery_app.py` (app real cuando Celery está instalado; skip si no).
+- **Archivos tocados:** `backend/app/{config,main,celery_app}.py`, `backend/app/core/logging_utils.py`, `backend/docker-entrypoint.sh`, `frontend/Dockerfile`, `docker-compose{,.dev}.yml`, `.env.docker`, `README.md`, `backend/README.md`, `docs/RUNBOOK.md`, `docs/OBSERVABILITY.md`, `docs/RELEASE.md`, `CHANGELOG.md`, `decisions.md`, `plan.md`, `bitacora.md` y los dos tests nuevos.
+- **Verificación:**
+  - `docker compose ps` → db/redis/backend/celery/frontend **healthy**; beat `Up`.
+  - `GET /api/health` → `200 {"status":"healthy","database":"connected"}`; `GET /api/metrics` → JSON con `scans.total`/`by_status`/`active`; frontend `200`; logs JSON (app y `uvicorn.access`).
+  - `pytest tests/api tests/core` → **205 passed, 1 skipped**; `verify.ps1` → **All checks passed** (frontend 67).
+  - Worker procesó `dispatch_due_schedules_task` (`{'dispatched': 0}`) con Beat activo.
+- **Hallazgos / riesgos / deuda:**
+  - Smoke 3–10 (scan real, WS, export, schedules, cancelación) quedan para entorno autorizado (DEC-004); el usuario limitó esta validación a salud/métricas.
+  - El healthcheck del worker depende de `inspect ping` y del nombre `celery@$HOSTNAME`; si se cambia `--hostname`, ajustar el check.
+  - El stack queda levantado en local; `make down` para detenerlo.
+- **Decisiones:** DEC-015.
+- **Siguiente paso:** completar smoke 3–10 en entorno autorizado, fechar `CHANGELOG` y crear tag `v0.1.0` con aprobación.
+
 ## 2026-11-14 — Docs/Release (PLAN-050: CHANGELOG y fuentes de versión)
 
 - **Objetivo (Plan ID):** PLAN-050 (release readiness).

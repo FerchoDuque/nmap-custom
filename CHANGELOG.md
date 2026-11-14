@@ -42,6 +42,11 @@ el checklist están en [`docs/RELEASE.md`](docs/RELEASE.md).
 - Healthcheck del contenedor sin depender de `requests`.
 - Tests deterministas: DNS inverso desactivable (`RESOLVE_HOSTNAMES`) y suite
   de backend en segundos, sin red real.
+- Dry-run de release: PostgreSQL pinneado a `psycopg2` (SQLAlchemy 2.1 resolvía
+  `psycopg` v3), entrada Celery corregida a `app.celery_app:celery_app`, los
+  errores de import de tareas ya no se enmascaran como app dummy, el entrypoint
+  parsea la URL de SQLAlchemy, healthcheck del frontend en `127.0.0.1` y
+  healthchecks específicos para worker (ping) y beat (deshabilitado).
 
 ### Security
 

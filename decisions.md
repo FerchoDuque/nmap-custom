@@ -259,6 +259,25 @@
 
 ---
 
+## DEC-015 — Wiring de despliegue verificado en dry-run: psycopg2, Celery real y healthchecks por servicio
+- **Fecha:** 2026-11-14
+- **Estado:** accepted
+- **Contexto:** el primer dry-run real (`docker compose build`/`up`) reveló fallos que los tests locales no cubrían: SQLAlchemy 2.1 resolvía `postgresql://` a `psycopg` (v3) no instalado; `celery -A app.celery_app` buscaba el atributo `celery`; el `except ImportError` de `celery_app.py` convertía ese fallo en `_DummyCeleryApp`; el entrypoint pasaba la URL SQLAlchemy directamente a `psycopg2.connect`; el healthcheck del frontend usaba `localhost` (IPv6) y los de worker/beat heredaban el check HTTP del backend.
+- **Decisión:**
+  - Fijar PostgreSQL a `postgresql+psycopg2://` en configuración, compose y `.env.docker` (la imagen instala `psycopg2-binary`).
+  - Invocar Celery como `-A app.celery_app:celery_app` y usar `_DummyCeleryApp` **solo** si falta el paquete `celery`; los errores al importar `app.tasks` fallan rápido.
+  - Parsear la URL con `sqlalchemy.engine.make_url` en el entrypoint y omitir la espera si el backend no es PostgreSQL.
+  - Healthchecks por servicio: frontend `127.0.0.1`, worker `celery inspect ping`, beat deshabilitado; el check HTTP queda para el backend.
+  - Enrutar `uvicorn.access`/`uvicorn.error` al formatter JSON (`include_uvicorn=True`).
+- **Alternativas consideradas:** añadir `psycopg[binary]` (descartado: cambia el driver en todo el stack); quitar el fallback de Celery (descartado: rompe tests sin Celery); healthcheck único global (descartado: cada servicio tiene una señal distinta).
+- **Consecuencias:**
+  - (+) `docker compose up` arranca con todos los servicios sanos, los workers registran `app.tasks` y los logs son JSON homogéneos.
+  - (-) El stack queda atado a `psycopg2`; migrar a psycopg v3 requiere actualizar URL y dependencias; el healthcheck del worker depende de que el nodo responda a `inspect ping`.
+- **Impacto en plan/grafo:** cierra el dry-run de `PLAN-050` (smoke 1–2); los smoke 3–10 siguen condicionados a entorno autorizado (DEC-004).
+- **Verificación:** `docker compose build` + `up -d`; `ps` con backend/celery/frontend healthy; `/api/health` 200 y `/api/metrics` JSON; logs JSON de app y `uvicorn.access`; backend **205 passed + 1 skipped**; `verify.ps1` All checks passed.
+
+---
+
 ## Plantilla para nuevas decisiones
 
 ```md

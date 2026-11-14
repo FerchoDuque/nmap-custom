@@ -87,6 +87,25 @@ Smoke tests automatizados disponibles sin red real (runbook):
 `tests/core/test_resilience.py`, `tests/api/test_error_handling.py`,
 `tests/api/test_system.py`.
 
+### 3.1 Evidencia del dry-run (2026-11-14)
+
+```text
+Fecha/commit: 2026-11-14 / d997313 (fixes de wiring) + cierre documental
+make verify: All checks passed (backend 205 passed, 1 skipped; frontend 67 passed; build OK)
+docker compose config: docker-compose.yml y docker-compose.dev.yml -> exit 0
+docker compose build: backend, celery, beat y frontend construidos
+docker compose up -d: db/redis/backend/celery/frontend healthy; beat Up
+Smoke 1 (salud):   GET http://localhost:8001/api/health -> 200 {"status":"healthy","database":"connected"}
+Smoke 2 (métricas): GET /api/metrics -> JSON con scans.total/by_status/active y totales
+Extra: frontend http://localhost/ -> 200; logs de backend y uvicorn.access en JSON
+Smoke 3-10: diferidos a entorno autorizado (decisión del operador; sin escaneos reales)
+Incidencias: 6 fallos de wiring detectados y corregidos (driver DB, Celery, entrypoint,
+             healthchecks de frontend/worker/beat y logs de Uvicorn)
+Rollback: no ejecutado (sin migraciones destructivas en esta iteración)
+Aprobado por: operador (alcance limitado a salud/métricas)
+```
+
+
 ## 4. Rollback
 
 1. Detener servicios: `make down`.
