@@ -10,6 +10,7 @@ el checklist completo y evidencia adjunta (comandos + resultado).
   - `backend/pyproject.toml` → `project.version`
   - `frontend/package.json` → `version`
   - `backend/app/main.py` → `FastAPI(version=...)` y `GET /`
+  - `CHANGELOG.md` → mover `Unreleased` a la versión con fecha
   - `docs/CONTRACT.md` cuando cambie el contrato
 - Tag de git: `vX.Y.Z` sobre el commit verificado.
 - Cambios incompatibles de contrato ⇒ `MAJOR` (o `0.MINOR` en pre-1.0).
@@ -55,7 +56,7 @@ git push origin v0.1.0
 - [ ] `plan.md` sin ítems `doing` no intencionales.
 - [ ] `decisions.md` con las decisiones del ciclo.
 - [ ] `bitacora.md` con verificación de la última iteración.
-- [ ] `README`, `docs/CONTRACT.md`, `docs/RUNBOOK.md`, `docs/CI.md` y
+- [ ] `README`, `CHANGELOG.md`, `docs/CONTRACT.md`, `docs/RUNBOOK.md`, `docs/CI.md` y
       `docs/OBSERVABILITY.md` revisados contra el comportamiento real.
 - [ ] Limitaciones conocidas vigentes (sección 5).
 

@@ -29,6 +29,21 @@
 
 ---
 
+## 2026-11-14 — Docs/Release (PLAN-050: CHANGELOG y fuentes de versión)
+
+- **Objetivo (Plan ID):** PLAN-050 (release readiness).
+- **Contexto/insumos:** no existía `CHANGELOG.md` ni un lugar único que agrupara los cambios de `0.1.0`; `docs/RELEASE.md` listaba fuentes de versión pero no el changelog.
+- **Acciones realizadas:**
+  - `CHANGELOG.md` en formato Keep a Changelog con `Unreleased — objetivo 0.1.0` y secciones Added/Changed/Fixed/Security/limitaciones, resumiendo motor, API/WS, schedules, frontend, observabilidad, resiliencia, seguridad y docs.
+  - README: índice documental incluye el changelog.
+  - `docs/RELEASE.md`: §1 añade `CHANGELOG.md` como fuente de versión (mover `Unreleased` con fecha) y el checklist de documentación lo incluye.
+  - `plan.md`: evidencia de PLAN-050 actualizada.
+- **Archivos tocados:** `CHANGELOG.md` (nuevo), `README.md`, `docs/RELEASE.md`, `plan.md`, `bitacora.md`.
+- **Verificación:** revisión cruzada del contenido con `plan.md`/`decisions.md` y versiones `0.1.0` en `backend/pyproject.toml`, `frontend/package.json` y `backend/app/main.py`. Cambio documental sin código ejecutable: no aplica TDD (excepción justificada en `agents.md` §4).
+- **Hallazgos / riesgos / deuda:** el changelog quedará como `Unreleased` hasta que el dry-run de PLAN-050 se apruebe; entonces se fechará y se creará el tag `v0.1.0`.
+- **Decisiones:** ninguna nueva.
+- **Siguiente paso:** dry-run con Docker activo y cierre de PLAN-050.
+
 ## 2026-11-14 — Backend/Observabilidad (deuda PLAN-040: nivel de log configurable)
 
 - **Objetivo:** cerrar la deuda "nivel de log fijo en `INFO`" detectada al cerrar PLAN-040/DEC-012.

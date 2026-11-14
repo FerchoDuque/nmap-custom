@@ -308,6 +308,7 @@ See [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for incident procedures and
 
 | Documento | Contenido |
 |---|---|
+| [`CHANGELOG.md`](CHANGELOG.md) | Historial de cambios por release |
 | [`docs/CONTRACT.md`](docs/CONTRACT.md) | Contrato REST/WS v1.0, validación, errores y operación |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Operación, diagnóstico por síntoma y recuperación |
 | [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md) | Logs JSON, health y métricas |
