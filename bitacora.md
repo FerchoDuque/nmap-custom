@@ -29,6 +29,18 @@
 
 ---
 
+## 2026-11-14 — Release (tag v0.1.0)
+
+- **Objetivo:** publicar `v0.1.0` tras el dry-run 1–2 aprobado.
+- **Acciones realizadas:**
+  - `CHANGELOG.md`: `Unreleased — objetivo 0.1.0` → `[0.1.0] — 2026-11-14`.
+  - `docs/RELEASE.md` §3.1: evidencia incluye el tag; `plan.md` refleja el cierre.
+  - Verificadas las fuentes de versión: `backend/pyproject.toml`, `frontend/package.json` y `FastAPI(version=...)`/`GET /` en `0.1.0`.
+- **Verificación:** `git tag -n` y `git show v0.1.0 --stat`; árbol limpio y stack healthy al momento del tag.
+- **Hallazgos / riesgos / deuda:** el tag no valida los smoke 3–10; si esos flujos revelan defectos, se corregirá y publicará `0.1.1` (no se mueve el tag).
+- **Aprobado por:** operador.
+- **Siguiente paso:** smoke 3–10 en entorno autorizado (DEC-004).
+
 ## 2026-11-14 — Infra/QA (PLAN-050: dry-run de release y wiring corregido)
 
 - **Objetivo (Plan ID):** PLAN-050 (dry-run real: build, up, smoke 1–2).

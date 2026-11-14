@@ -102,6 +102,7 @@ Smoke 3-10: diferidos a entorno autorizado (decisión del operador; sin escaneos
 Incidencias: 6 fallos de wiring detectados y corregidos (driver DB, Celery, entrypoint,
              healthchecks de frontend/worker/beat y logs de Uvicorn)
 Rollback: no ejecutado (sin migraciones destructivas en esta iteración)
+Tag: v0.1.0 (anotado, sobre el commit de cierre de esta iteración)
 Aprobado por: operador (alcance limitado a salud/métricas)
 ```
 

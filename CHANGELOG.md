@@ -4,7 +4,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y versionado [SemVer](https://semver.org/lang/es/). El procedimiento de release y
 el checklist están en [`docs/RELEASE.md`](docs/RELEASE.md).
 
-## [Unreleased] — objetivo 0.1.0
+## [0.1.0] — 2026-11-14
 
 ### Added
 
