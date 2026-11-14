@@ -29,6 +29,25 @@
 
 ---
 
+## 2026-11-14 — Release (publicación en GitHub)
+
+- **Objetivo:** publicar el proyecto y el tag `v0.1.0` en un repositorio remoto.
+- **Contexto/insumos:** `gh` autenticado como `FerchoDuque` (scopes `repo`, `workflow`); sin remotos configurados y sin repo previo con ese nombre.
+- **Acciones realizadas:**
+  - `gh repo create nmap-custom --public --source . --remote origin --push` → crea `FerchoDuque/nmap-custom` (público), añade `origin` y sube `main`.
+  - `git push origin v0.1.0` → publica el tag anotado.
+- **Verificación:**
+  - `gh repo view` → `visibility: PUBLIC`, `isPrivate: false`, rama por defecto `main`.
+  - `gh api repos/.../tags` → `v0.1.0`.
+  - `git ls-remote --tags origin` → `refs/tags/v0.1.0` apunta a `42c30d8` (tag anotado).
+  - `git status -sb` → `## main...origin/main` sin cambios pendientes.
+- **Hallazgos / riesgos / deuda:**
+  - El repositorio es público: no hay secretos versionados (solo `.env.example`/`.env.docker` con valores de ejemplo) y `SECRET_KEY` sigue siendo placeholder (el backend emite warning al arrancar).
+  - Faltan metadatos de repositorio: descripción, topics y `LICENSE` (el proyecto no declara licencia explícita).
+  - El tag no cubre los smoke 3–10; cualquier defecto posterior se publica como `0.1.1` sin mover `v0.1.0`.
+- **Decisiones:** ninguna nueva.
+- **Siguiente paso:** decidir licencia y metadatos del repo; smoke 3–10 en entorno autorizado.
+
 ## 2026-11-14 — Release (tag v0.1.0)
 
 - **Objetivo:** publicar `v0.1.0` tras el dry-run 1–2 aprobado.
