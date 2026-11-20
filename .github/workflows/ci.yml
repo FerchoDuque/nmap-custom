@@ -28,7 +28,7 @@ jobs:
         run: python -m pytest tests/api tests/core -q
         env:
           PYTHONPATH: .
-          DATABASE_URL: sqlite:///:memory:
+          DATABASE_URL: "sqlite:///:memory:"
 
   frontend:
     name: Frontend checks
