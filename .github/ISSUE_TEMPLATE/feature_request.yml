@@ -1,0 +1,43 @@
+name: Feature request
+description: Proponer una mejora o nueva capacidad
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema o necesidad
+      description: ¿Qué no puedes hacer hoy y por qué importa?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Escaneo / detección
+        - API REST / WebSocket
+        - Frontend / UX
+        - Schedules / tareas
+        - Observabilidad / operación
+        - Seguridad / alcance
+        - Documentación
+        - Otro
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Alcance
+      options:
+        - label: La propuesta no facilita escaneos ni ataques a sistemas sin autorización.
+          required: true

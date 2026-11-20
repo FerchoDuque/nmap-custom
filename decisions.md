@@ -278,6 +278,24 @@
 
 ---
 
+## DEC-016 — Licencia GPL-3.0, protección de `main` y cadena de suministro reproducible
+- **Fecha:** 2026-11-20
+- **Estado:** accepted
+- **Contexto:** el repositorio se publicó público sin `LICENSE` (legalmente "todos los derechos reservados"), el CI nunca había llegado a ejecutarse y las dependencias no tenían lock, lo que ya provocó un fallo por resolución de `psycopg`/SQLAlchemy 2.1.
+- **Decisión:**
+  - **Licencia GPL-3.0.** `python-nmap` es GPL-3.0 (PyPI) y se importa en `os_fingerprint.py`, por lo que distribuir el proyecto como obra combinada bajo licencia permisiva exigiría sustituirlo (p. ej. `subprocess` + parseo XML propio). `nmap` se ejecuta como binario separado (GPLv2, agregación). Se documenta en README y se registra aquí.
+  - **`main` protegido:** PR obligatorio, checks `Backend tests`, `Frontend checks` y `Compose config` en verde, sin force-push ni borrado de rama. `enforce_admins=false` para no bloquear al único mantenedor (bypass explícito y reversible).
+  - **Lockfile único:** `backend/pyproject.toml` + `uv.lock`; `requirements.txt` (runtime) y `requirements-dev.txt` se generan con `uv export --frozen` con hashes y se consumen en Docker/CI. `make lock` regenera.
+  - **Cadena de suministro:** Dependabot (pip, npm, actions, docker), CodeQL `security-extended` (Python y JS/TS), imágenes en GHCR con SBOM y provenance, y release automática desde el tag validando versión ↔ CHANGELOG.
+- **Alternativas consideradas:** MIT/Apache-2.0 (descartada: obliga a reescribir la integración con nmap); sin protección de rama (descartada: el CI roto pasó desapercibido); `pip-compile` (descartada: `uv` ya está disponible y resuelve más rápido).
+- **Consecuencias:**
+  - (+) Cualquiera puede clonar, instalar versiones idénticas y verificar el resultado; el CI bloquea merges rotos; el uso corporativo es legalmente viable.
+  - (-) GPL-3.0 impone obligaciones de copyleft a los derivados; el bypass de admin permite saltarse los checks (mitigado por disciplina y revisión); las imágenes nacen privadas en GHCR hasta cambiar la visibilidad del paquete.
+- **Impacto en plan/grafo:** cierra PLAN-060/061; habilita PLAN-062..065 (0.2.0).
+- **Verificación:** runs `44801239036` y `44801604225` en verde sin warnings; `pytest tests/core` (154 passed, 1 skipped) incluyendo `test_workflows`, `test_versions`, `test_dependencies` y `test_changelog_section`.
+
+---
+
 ## Plantilla para nuevas decisiones
 
 ```md

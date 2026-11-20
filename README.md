@@ -1,5 +1,9 @@
 # Network Scanner - Advanced Nmap-Style Tool
 
+[![CI](https://github.com/FerchoDuque/nmap-custom/actions/workflows/ci.yml/badge.svg)](https://github.com/FerchoDuque/nmap-custom/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/FerchoDuque/nmap-custom/actions/workflows/codeql.yml/badge.svg)](https://github.com/FerchoDuque/nmap-custom/actions/workflows/codeql.yml)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+
 A comprehensive network scanning tool with Python/FastAPI backend and React/TypeScript frontend, designed for local network analysis and security assessment.
 
 ## ⚠️ Legal Disclaimer
@@ -46,15 +50,15 @@ A comprehensive network scanning tool with Python/FastAPI backend and React/Type
 **Production:**
 ```bash
 # Clone repository
-git clone <repository>
+git clone https://github.com/FerchoDuque/nmap-custom.git
 cd nmap-custom
 
 # Build and start all services
 make prod
 
 # Or manually:
-docker-compose build
-docker-compose up -d
+docker compose build
+docker compose up -d
 ```
 
 **Development:**
@@ -63,7 +67,7 @@ docker-compose up -d
 make dev
 
 # Or manually:
-docker-compose -f docker-compose.dev.yml up
+docker compose -f docker-compose.dev.yml up
 ```
 
 **Access the application:**
@@ -302,7 +306,8 @@ npm run typecheck
 - **Legal**: Only scan networks you own or have permission to test
 
 See [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for incident procedures and
-[`docs/RELEASE.md`](docs/RELEASE.md) for the release checklist.
+[`docs/RELEASE.md`](docs/RELEASE.md) for the release checklist. Report
+vulnerabilities privately following [`SECURITY.md`](SECURITY.md).
 
 ## 📖 Documentation
 
@@ -319,23 +324,41 @@ See [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for incident procedures and
 
 ## 🛣️ Roadmap
 
-- [x] Core scanning engine
-- [x] FastAPI backend
-- [x] React frontend foundation
-- [ ] Complete UI components (ScanConfig, NetworkTopology, etc.)
-- [ ] Electron desktop packaging — aplazado (DEC-014)
-- [ ] Advanced network visualization
-- [ ] Vulnerability detection integration
-- [ ] Report generation
-- [ ] Multi-user support with authentication
+### 0.1.0 — publicado (2026-11-14)
+
+- [x] Motor de escaneo (TCP connect/SYN/UDP/comprehensive), detección de servicios y OS fingerprint.
+- [x] API REST + WebSocket con contrato v1.0, schedules y exportación.
+- [x] Frontend React/TypeScript con progreso en vivo.
+- [x] Observabilidad (logs JSON, `/api/health`, `/api/metrics`) y resiliencia.
+- [x] Dry-run de release, compose healthy y tag `v0.1.0`.
+
+### 0.2.0 — en curso
+
+- [ ] CI con checks obligatorios, CodeQL y Dependabot.
+- [ ] Licencia, guía de contribución y política de seguridad.
+- [ ] Migraciones Alembic y backups automatizados.
+- [ ] Autenticación, RBAC y audit log.
+- [ ] Allowlist de alcance y cuotas por cliente.
+- [ ] E2E determinista en red Docker aislada (smoke 3–10).
+
+### Futuro
+
+- [ ] Perfiles de escaneo, diff entre scans e inventario de activos.
+- [ ] Notificaciones e informes programados.
+- [ ] Exportador Prometheus/OpenTelemetry.
+- [ ] Empaquetado desktop (DEC-014).
 
 ## 🤝 Contributing
 
-This is a personal project for educational purposes. Feel free to fork and adapt for your own use.
+Lee [`CONTRIBUTING.md`](CONTRIBUTING.md) (TDD, verificación y checklist de PR) y el
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Los cambios entran por PR con CI en
+verde.
 
 ## 📄 License
 
-This project is for educational and authorized security testing purposes only. Use responsibly.
+[GNU GPL v3.0](LICENSE). Se eligió GPL-3.0 porque `python-nmap` (dependencia de
+la detección de SO) es GPL-3.0; ver DEC-016 en [`decisions.md`](decisions.md).
+Uso permitido únicamente en redes propias o con autorización explícita.
 
 ## 🙏 Acknowledgments
 

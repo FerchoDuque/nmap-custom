@@ -1,0 +1,64 @@
+name: Bug report
+description: Reportar un comportamiento incorrecto
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por el reporte. **No publiques datos de redes de terceros** ni
+        secretos. Para vulnerabilidades usa un Security Advisory privado
+        (ver `SECURITY.md`).
+  - type: input
+    id: version
+    attributes:
+      label: Versión / commit
+      placeholder: "0.1.0 (42c30d8)"
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Despliegue
+      options:
+        - docker compose (producción)
+        - docker compose dev
+        - backend local
+        - frontend local
+        - otro
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamiento actual
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs relevantes
+      description: Salida JSON del backend/Celery. Elimina IPs, tokens y credenciales.
+      render: shell
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Confirmación de alcance
+      options:
+        - label: El comportamiento se reprodujo en una red propia o con autorización explícita.
+          required: true

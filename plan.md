@@ -1,7 +1,7 @@
 # plan.md — Roadmap y grafo de ejecución
 
 > Estado vivo del trabajo. Se actualiza en cada iteración del loop definido en [`agents.md`](agents.md).
-> Última actualización: 2026-11-14 (PLAN-021/022/031/032/040/041/042/043/050 cerrados; dry-run de release 1–2 validado, `LOG_LEVEL` configurable y wiring de despliegue corregido)
+> Última actualización: 2026-11-20 (PLAN-060/061 cerrados: CI verde con CodeQL/Dependabot, licencia GPL-3.0, imágenes GHCR y release automatizada; 0.2.0 centrado en datos, auth, guardrails y E2E)
 
 ## 1. Visión y objetivo
 
@@ -107,6 +107,13 @@ graph TD
 | PLAN-042 | Documentación profesional y runbooks | Docs | done | Media | PLAN-023, PLAN-040, PLAN-041 | README/API/config/deploy/troubleshooting/runbooks actualizados, limitaciones conocidas y guía de operación segura | **Completado:** `docs/RUNBOOK.md` (servicios/puertos, ciclo de vida, salud, diagnóstico por síntoma, configuración crítica y seguridad operativa) y `docs/RELEASE.md` (versionado, checklist, smoke tests 1–10, rollback y limitaciones 0.1.0); README con índice documental, variables de resiliencia y notas de seguridad; contrato §3.4/§3.6/§3.7 y `docs/OBSERVABILITY.md` alineados. Verificación cruzada con `docker compose config` (prod/dev, exit 0) y comandos `make` existentes |
 | PLAN-043 | Decidir y acotar estrategia de `electron/` | Producto/Infra | done | Baja | PLAN-001 | DEC explícita: implementar, aplazar o retirar del alcance activo; plan/grafo ajustados | **Completado:** DEC-014 aplaza el empaquetado Electron fuera de 0.1.0; `electron/` estaba vacío y no versionado, por lo que no se mantiene placeholder activo. README/roadmap lo marcan como aplazado y el grafo refleja la decisión. Reapertura solo con nueva `DEC` que defina alcance/distribución |
 | PLAN-050 | Criterios de release y hardening final | Release | done | Media | PLAN-022, PLAN-023, PLAN-030, PLAN-031, PLAN-032, PLAN-041, PLAN-042 | Checklist de release aprobado, versiones/tagging, configuración prod segura, smoke tests y rollback básico documentados | **Completado (dry-run 1–2):** `docs/RELEASE.md` con SemVer/tagging, checklist, smoke tests 1–10 y rollback; `CHANGELOG.md`; compose sin `version` y `API_RELOAD=false`; **6 fallos de wiring corregidos** en el dry-run real (psycopg2, entrada Celery, dummy silencioso, entrypoint, healthchecks de frontend/worker/beat, logs Uvicorn JSON); stack `build`+`up` con db/redis/backend/celery/frontend **healthy** y beat `Up`; `/api/health` 200 y `/api/metrics` JSON. Backend **205 passed + 1 skipped**; verify completo OK. **Limitación:** smoke 3–10 (scans/WS/schedules) diferidos a entorno autorizado (DEC-004); tag `v0.1.0` creado (2026-11-14) |
+| PLAN-060 | CI/CD profesional y cadena de suministro | Infra/QA | done | Alta | PLAN-041, PLAN-050 | CI obligatorio y verde, análisis estático de seguridad, dependencias automatizadas, imágenes versionadas y release reproducible | **Completado:** CI reparado (YAML inválido desde el primer push) con `concurrency`, timeouts y job `Compose config`; `codeql.yml` (`security-extended`, Python + JS/TS), `dependabot.yml` (pip/npm/actions/docker), `docker.yml` (GHCR, SBOM, provenance) y `release.yml` (valida tag↔versión y publica notas del CHANGELOG). `main` protegido con checks obligatorios. Tests: `test_workflows`, `test_changelog_section`, `test_versions` |
+| PLAN-061 | Licencia, gobernanza y metadatos del repositorio | Docs/Producto | done | Alta | PLAN-060 | Licencia explícita y coherente, guías de contribución/conducta, política de seguridad y plantillas de issues/PR | **Completado:** `LICENSE` GPL-3.0 (DEC-016), `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, plantillas de issue/PR, badges y roadmap real en README, descripción y topics del repo |
+| PLAN-062 | Migraciones de base de datos y ciclo de vida de datos | Backend/Infra | todo | Alta | PLAN-060 | Alembic versionado, migración baseline reproducible, backup/restore probado y retención definida | Sin `alembic/`: hoy el esquema se crea con `create_all` |
+| PLAN-063 | Autenticación, autorización y auditoría | Seguridad | todo | Crítica | PLAN-062 | Usuarios/API tokens, RBAC (viewer/operator/admin) y audit log consultable | Bloqueante para exponer la API fuera de red privada |
+| PLAN-064 | Guardrails de alcance y cuotas | Seguridad | todo | Crítica | PLAN-062 | Allowlist de redes, denegación de rangos públicos por defecto y cuotas/rate limit por cliente | Convierte DEC-004 en control técnico |
+| PLAN-065 | E2E determinista en red aislada | QA | todo | Alta | PLAN-060, PLAN-062 | Perfil `lab` en compose con blancos controlados y E2E scan→WS→export→schedule→cancel en CI | Cierra los smoke 3–10 sin red externa |
+| PLAN-066 | Calidad estática y cobertura | QA | todo | Media | PLAN-060 | `ruff` + `mypy` en CI, umbral de cobertura en `core/`, `schemathesis`/`hypothesis` | Deuda declarada en `docs/CI.md` |
 
 ## 7. Hallazgos de auditoría incorporados (PLAN-002)
 
@@ -138,10 +145,11 @@ Se considerará el objetivo alcanzado cuando:
 
 ## 10. Próxima iteración (loop slice)
 
-1. **PLAN-023 (validación):** disparo real de un schedule en entorno autorizado y confirmación de `next_run_at`/contadores.
-2. **Release 0.1.0:** completar smoke tests 3–10 en entorno autorizado y, si aparecen cambios, publicar `0.1.1` (tag `v0.1.0` ya creado).
-3. **Observabilidad (deuda restante):** exportador Prometheus/OpenTelemetry si se requiere (el nivel de log ya es configurable con `LOG_LEVEL`).
-4. **Salida esperada:** release 0.1.0 etiquetado con evidencia, flujo completo validado en entorno autorizado y deuda técnica acotada.
+1. **PLAN-062 (datos):** Alembic baseline + backup/restore automatizado + retención; sin esto no hay upgrades seguros.
+2. **PLAN-063 (auth):** usuarios/API tokens, RBAC y audit log; requisito para salir de red privada.
+3. **PLAN-064 (guardrails):** allowlist de redes, denegación de rangos públicos y cuotas por cliente.
+4. **PLAN-065 (E2E):** perfil `lab` en compose y flujo scan→WS→export→schedule→cancel en CI.
+5. **Salida esperada:** `0.2.0` con auth, alcance controlado, migraciones y E2E verde; los smoke manuales 3–10 quedan cubiertos por el arnés.
 
 ## 11. Historial de cambios del plan
 
@@ -170,4 +178,5 @@ Se considerará el objetivo alcanzado cuando:
 - **2026-11-14:** **PLAN-050 cerrado (dry-run 1–2)** — build y `up -d` reales: db/redis/backend/celery/frontend **healthy** y beat `Up`; `/api/health` 200, `/api/metrics` JSON y frontend 200; logs JSON también para `uvicorn.access/error`. El dry-run detectó y corrigió **6 fallos de wiring**: driver `postgresql+psycopg2`, entrada `app.celery_app:celery_app`, fallback dummy que enmascaraba imports, parseo de URL en el entrypoint, healthchecks de frontend/worker/beat y logs Uvicorn. Tests de regresión `test_compose_config.py`/`test_celery_app.py`; backend **205 passed + 1 skipped**; `verify.ps1` OK. **Limitación:** smoke 3–10 y tag `v0.1.0` pendientes de entorno autorizado/aprobación (DEC-004, DEC-015).
 - **2026-11-14:** **release `v0.1.0` creada** — `CHANGELOG` fechado, evidencia de release actualizada y tag anotado sobre el commit de cierre. Los smoke 3–10 siguen pendientes de entorno autorizado; cualquier corrección posterior se publicará como `0.1.1`.
 - **2026-11-14:** **publicado en GitHub** — repositorio público `https://github.com/FerchoDuque/nmap-custom` con `main` y tag `v0.1.0` (`42c30d8`); `origin` configurado. Pendiente: licencia, descripción/topics y smoke 3–10.
+- **2026-11-20:** **PLAN-060/061 cerrados (madurez de repositorio)** — CI reparado (nunca había corrido) con `concurrency`, timeouts y job `Compose config`; añadidos `codeql.yml` (security-extended), `dependabot.yml`, `docker.yml` (GHCR + SBOM + provenance) y `release.yml` (tag↔versión + notas del CHANGELOG). `main` protegido con checks obligatorios. Lockfile `uv` con `requirements*.txt` pineados y hasheados; `LICENSE` GPL-3.0 (DEC-016), `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` y plantillas. Backend **226 passed + 1 skipped**. Próximo: 0.2.0 (PLAN-062..065).
 - **2026-11-20:** **CI reparado** — el workflow nunca había corrido (YAML inválido por `sqlite:///:memory:` sin comillas); ahora `main` está en verde con `checkout@v5`/`setup-python@v6`/`setup-node@v5` y test de regresión `test_workflows.py`. Siguiente hito: 0.2.0 (ver propuesta de madurez en la bitácora del 2026-11-20).
