@@ -29,22 +29,44 @@ misma URL para que el resultado no dependa del entorno del operador.
 
 ## CI
 
-`.github/workflows/ci.yml` se dispara en `push` a `main` y en `pull_request`:
+`.github/workflows/ci.yml` se dispara en `push` a `main`, en `pull_request` y
+puede reutilizarse (`workflow_call`) desde el release:
 
-- **backend:** Python 3.11, `pip install -r backend/requirements.txt`, pytest con
-  `PYTHONPATH=.` y SQLite en memoria.
+- **backend:** Python 3.11, `pip install -r backend/requirements-dev.txt`
+  (pins exactos generados desde `uv.lock`), pytest con `PYTHONPATH=.` y SQLite
+  en memoria.
 - **frontend:** Node 20, `npm ci`, lint, typecheck, tests y build.
+- **compose config:** valida `docker-compose.yml` y `docker-compose.dev.yml`.
+
+Workflows complementarios:
+
+| Workflow | Disparador | Qué hace |
+|---|---|---|
+| `codeql.yml` | push a `main`, PR y lunes 04:23 UTC | CodeQL `security-extended` para Python y JS/TS |
+| `docker.yml` | push a `main`/tags y PR que toque backend/frontend | Buildx, SBOM y provenance; push a GHCR en `main`/tags |
+| `release.yml` | tags `v*` | Reejecuta CI, valida tag = versión, publica notas del CHANGELOG y crea GitHub Release |
+
+`dependabot.yml` abre PRs semanales agrupadas para pip, npm, GitHub Actions y
+mensuales para las imágenes base.
+
+`main` está protegido: PR obligatorio y checks **Backend tests**, **Frontend
+checks** y **Compose config** en verde (el propietario conserva bypass de admin;
+ver DEC-016). No se permite force-push ni borrar la rama.
 
 No se ejecutan escaneos de red, resolución DNS ni contenedores con capacidades.
 
 ## Alcance y limitaciones
 
 - No hay E2E real de red/WebSocket ni disparo real de Beat: requiere un entorno
-  autorizado (DEC-004) y se valida aparte.
-- El job de CI no construye imágenes Docker; para eso usar `make build`/`make build-dev`.
+  autorizado (DEC-004) y se valida aparte. El objetivo de 0.2.0 es un perfil
+  `lab` dentro de la red Docker, sin red externa.
+- `docker.yml` construye y publica imágenes, pero no ejecuta la suite dentro de
+  ellas ni firma con cosign todavía.
+- Cobertura de backend aún no se mide en CI (`pytest-cov` está en dev; falta
+  fijar umbral).
 - **El bundle usa code-splitting** (rutas lazy y chunks de vendor); el mayor chunk actual es ~241 kB. Si reaparece el aviso >500 kB, revisar imports estáticos pesados.
 - La primera ejecución local requiere dependencias instaladas (`pip install -r
-  backend/requirements.txt`, `npm ci`).
+  backend/requirements-dev.txt`, `npm ci`).
 
 ## Solución de problemas
 

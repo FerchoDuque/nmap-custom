@@ -20,6 +20,24 @@ git tag -a v0.1.0 -m "Network Scanner 0.1.0"
 git push origin v0.1.0
 ```
 
+El workflow `release.yml` comprueba que el tag coincide con
+`backend/pyproject.toml`, extrae la sección correspondiente de `CHANGELOG.md` y
+crea el GitHub Release. Un tag publicado **no se mueve**: un fix se publica como
+`0.1.1`.
+
+## 1.1 Imágenes publicadas (GHCR)
+
+```text
+ghcr.io/ferchoduque/nmap-custom-backend
+ghcr.io/ferchoduque/nmap-custom-frontend
+```
+
+- `main` → `edge` y `sha-<corto>`.
+- Tag `vX.Y.Z` → `X.Y.Z`, `X.Y` y `latest`.
+- Cada build adjunta SBOM y provenance (`mode=max`).
+- Tras el primer push, poner los paquetes en **público** en GitHub → Packages
+  (por defecto nacen privados, aunque el repo sea público).
+
 ## 2. Checklist de pre-release
 
 ### Calidad

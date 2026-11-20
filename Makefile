@@ -1,4 +1,4 @@
-.PHONY: help build up down logs restart clean shell-backend shell-db shell-redis migrate test check check-backend check-frontend verify
+.PHONY: help build build-dev up up-dev down down-dev logs restart clean shell-backend shell-db shell-redis test check check-backend check-frontend verify ps stats dev prod stop lock
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -7,68 +7,65 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 build: ## Build all Docker containers
-	docker-compose build
+	docker compose build
 
 build-dev: ## Build development containers
-	docker-compose -f docker-compose.dev.yml build
+	docker compose -f docker-compose.dev.yml build
 
 up: ## Start all services (production)
-	docker-compose up -d
+	docker compose up -d
 
 up-dev: ## Start all services (development)
-	docker-compose -f docker-compose.dev.yml up
+	docker compose -f docker-compose.dev.yml up
 
 down: ## Stop all services
-	docker-compose down
+	docker compose down
 
 down-dev: ## Stop development services
-	docker-compose -f docker-compose.dev.yml down
+	docker compose -f docker-compose.dev.yml down
 
 logs: ## View logs from all services
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-backend: ## View backend logs
-	docker-compose logs -f backend
+	docker compose logs -f backend
 
 logs-celery: ## View Celery worker logs
-	docker-compose logs -f celery
+	docker compose logs -f celery
 
 logs-frontend: ## View frontend logs
-	docker-compose logs -f frontend
+	docker compose logs -f frontend
 
 restart: ## Restart all services
-	docker-compose restart
+	docker compose restart
 
 restart-backend: ## Restart backend service
-	docker-compose restart backend
+	docker compose restart backend
 
 restart-celery: ## Restart Celery worker
-	docker-compose restart celery
+	docker compose restart celery
 
 clean: ## Stop and remove all containers, networks, and volumes
-	docker-compose down -v
+	docker compose down -v
 	docker system prune -f
 
 shell-backend: ## Access backend container shell
-	docker-compose exec backend /bin/bash
+	docker compose exec backend /bin/bash
 
 shell-db: ## Access PostgreSQL shell
-	docker-compose exec db psql -U scanner -d network_scanner
+	docker compose exec db psql -U scanner -d network_scanner
 
 shell-redis: ## Access Redis CLI
-	docker-compose exec redis redis-cli
+	docker compose exec redis redis-cli
 
-migrate: ## Run database migrations
-	docker-compose exec backend alembic upgrade head
-
-migrate-create: ## Create a new migration (usage: make migrate-create MESSAGE="description")
-	docker-compose exec backend alembic revision --autogenerate -m "$(MESSAGE)"
+lock: ## Regenerate pinned requirements from uv.lock
+	cd backend && uv lock && uv export --frozen --no-dev --no-emit-project --format requirements-txt --no-header -o requirements.txt && uv export --frozen --extra dev --no-emit-project --format requirements-txt --no-header -o requirements-dev.txt
 
 test: ## Run tests in backend container
-	docker-compose exec backend pytest tests/ -v
+	docker compose exec backend pytest tests/ -v
 
 test-cov: ## Run tests with coverage
-	docker-compose exec backend pytest tests/ -v --cov=app --cov-report=term-missing
+	docker compose exec backend pytest tests/ -v --cov=app --cov-report=term-missing
 
 check-backend: ## Run backend tests locally (SQLite in-memory)
 	cd backend && PYTHONPATH=. DATABASE_URL=sqlite:///:memory: python -m pytest tests/api tests/core -q
@@ -82,7 +79,7 @@ verify: ## Run full local verification including frontend build
 	bash scripts/verify.sh
 
 ps: ## Show running containers
-	docker-compose ps
+	docker compose ps
 
 stats: ## Show container resource usage
 	docker stats
