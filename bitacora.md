@@ -29,6 +29,25 @@
 
 ---
 
+## 2026-11-20 — Infra/QA (CI rojo corregido y actions actualizadas)
+
+- **Objetivo:** el CI del repo público nunca se había ejecutado (3 runs fallidos en 0 s).
+- **Contexto/insumos:** `gh run list` mostró `failure` en 0 s; `yaml.safe_load` del workflow fallaba en la línea 31.
+- **Acciones realizadas:**
+  - Causa raíz: `DATABASE_URL: sqlite:///:memory:` sin comillas; el segundo `:` rompe el YAML.
+  - TDD: `backend/tests/core/test_workflows.py` valida que todos los workflows son YAML parseable, declaran `jobs` y que cada step tiene `uses` o `run` (rojo antes del fix).
+  - Fix: valor entre comillas en `ci.yml`.
+  - Actualización: `actions/checkout@v5`, `actions/setup-python@v6`, `actions/setup-node@v5` (Node 24) para eliminar el aviso de deprecación.
+- **Archivos tocados:** `.github/workflows/ci.yml`, `backend/tests/core/test_workflows.py`, `bitacora.md`, `plan.md`.
+- **Verificación:**
+  - `pytest tests/core/test_workflows.py tests/core/test_compose_config.py -q` → **10 passed**.
+  - Run `44801239036` → **success** (backend 40 s, frontend 1m59s); run posterior `44801604225` → **success** (32 s / 52 s) **sin annotations**.
+- **Hallazgos / riesgos / deuda:**
+  - El CI solo cubre tests/lint/typecheck/build; no valida compose, no publica imágenes ni usa lockfiles (deuda para 0.2.0).
+  - Un workflow inválido falla en 0 s y no avisa: ahora hay test de regresión.
+- **Decisiones:** ninguna.
+- **Siguiente paso:** roadmap 0.2.0 (ver plan) — CI con gates, migraciones, auth/guardrails y E2E en red aislada.
+
 ## 2026-11-14 — Release (publicación en GitHub)
 
 - **Objetivo:** publicar el proyecto y el tag `v0.1.0` en un repositorio remoto.
