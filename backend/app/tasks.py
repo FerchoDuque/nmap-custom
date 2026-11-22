@@ -263,3 +263,15 @@ def dispatch_due_schedules_task():
         return {"dispatched": dispatch_due_schedules(db)}
     finally:
         db.close()
+
+
+@_task_decorator
+def purge_expired_scans_task():
+    """Celery Beat entrypoint applying DATA_RETENTION_DAYS (PLAN-062)."""
+    from app.core.retention import purge_expired_scans
+
+    db = SessionLocal()
+    try:
+        return {"deleted_scans": purge_expired_scans(db)}
+    finally:
+        db.close()

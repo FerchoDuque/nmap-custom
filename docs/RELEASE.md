@@ -65,9 +65,11 @@ ghcr.io/ferchoduque/nmap-custom-frontend
 
 ### Base de datos
 
-- [ ] Backup reciente de PostgreSQL.
-- [ ] `make migrate` sin errores y `alembic current` en la revisión esperada.
-- [ ] Migraciones probadas en una copia restaurada (no solo en la base viva).
+- [ ] Backup reciente con `python -m app.core.backup backup --output ...`.
+- [ ] `python -m app.core.db_migrations` sin errores y `alembic current` en la
+      revisión esperada (sin múltiples heads).
+- [ ] Restore probado en una base de prueba (no solo en la base viva).
+- [ ] `DATA_RETENTION_DAYS` acorde a la política de la organización.
 
 ### Documentación
 
