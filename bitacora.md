@@ -44,8 +44,9 @@
 - **Verificación:**
   - `pytest tests/api tests/core -q` → **226 passed, 1 skipped** (incluye los 4 archivos de test nuevos).
   - `docker compose config` (prod/dev) → exit 0.
-  - CI en GitHub: runs `44801239036` y `44801604225` → **success** (backend ~32–40 s, frontend 52 s–2 min).
-  - **Limitación:** `docker build` no se pudo repetir localmente (Docker Desktop detenido); lo valida el workflow `docker.yml` en el próximo push.
+  - CI en GitHub: runs `44801239036` y `44801604225` → **success**; tras el push de 0.2.0, run `44806348488` → **success** (40 s), `CodeQL` `44806348261` → **success** y `Docker` `44806348666` → **success** (build + push a GHCR con SBOM/provenance).
+  - Imágenes verificadas con token anónimo: `ghcr.io/ferchoduque/nmap-custom-{backend,frontend}:main` y `:sha-8c55cc0` **públicas**.
+  - **Limitación:** `docker build` no se pudo repetir en local (Docker Desktop detenido); la construcción real la validó `docker.yml`.
 - **Hallazgos / riesgos / deuda:**
   - `python-nmap` es GPL-3.0: se eligió GPL-3.0 para no reescribir la integración; una licencia permisiva exigiría sustituirlo.
   - GHCR crea paquetes privados por defecto: hay que hacerlos públicos tras el primer push.

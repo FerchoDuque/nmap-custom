@@ -35,8 +35,8 @@ ghcr.io/ferchoduque/nmap-custom-frontend
 - `main` → `edge` y `sha-<corto>`.
 - Tag `vX.Y.Z` → `X.Y.Z`, `X.Y` y `latest`.
 - Cada build adjunta SBOM y provenance (`mode=max`).
-- Tras el primer push, poner los paquetes en **público** en GitHub → Packages
-  (por defecto nacen privados, aunque el repo sea público).
+- Los paquetes son **públicos** (verificado con token anónimo de GHCR); si se
+  quieren privados, cambiar la visibilidad en GitHub → Packages.
 
 ## 2. Checklist de pre-release
 

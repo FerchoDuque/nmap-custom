@@ -292,7 +292,7 @@
   - (+) Cualquiera puede clonar, instalar versiones idénticas y verificar el resultado; el CI bloquea merges rotos; el uso corporativo es legalmente viable.
   - (-) GPL-3.0 impone obligaciones de copyleft a los derivados; el bypass de admin permite saltarse los checks (mitigado por disciplina y revisión); las imágenes nacen privadas en GHCR hasta cambiar la visibilidad del paquete.
 - **Impacto en plan/grafo:** cierra PLAN-060/061; habilita PLAN-062..065 (0.2.0).
-- **Verificación:** runs `44801239036` y `44801604225` en verde sin warnings; `pytest tests/core` (154 passed, 1 skipped) incluyendo `test_workflows`, `test_versions`, `test_dependencies` y `test_changelog_section`.
+- **Verificación:** runs `44801239036` y `44801604225` en verde sin warnings; tras el push, `44806348488` (CI), `44806348261` (CodeQL) y `44806348666` (Docker) en verde; `pytest tests/core` (154 passed, 1 skipped) incluyendo `test_workflows`, `test_versions`, `test_dependencies` y `test_changelog_section`.
 
 ---
 
