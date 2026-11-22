@@ -1,5 +1,5 @@
 # Multi-stage build for Python backend
-FROM python:3.11-slim as builder
+FROM python:3.15-slim as builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -21,7 +21,7 @@ RUN uv export --frozen --no-dev --no-emit-project --format requirements-txt \
     && pip install --no-cache-dir --user -r /tmp/requirements.txt
 
 # Runtime stage
-FROM python:3.11-slim
+FROM python:3.15-slim
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
