@@ -59,6 +59,11 @@ else:
                 "task": "app.tasks.dispatch_due_schedules_task",
                 "schedule": 60.0,
             },
+            "purge-expired-scans": {
+                "task": "app.tasks.purge_expired_scans_task",
+                # Daily; Beat starts it as soon as the worker is up.
+                "schedule": 86400.0,
+            },
         },
     )
 
