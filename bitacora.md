@@ -37,15 +37,16 @@
   - **CI:** `concurrency`, `timeout-minutes`, `workflow_call` y job `Compose config`; install desde `requirements-dev.txt`.
   - **Seguridad/automatización:** `codeql.yml` (Python + JS/TS, `security-extended`), `dependabot.yml` (pip/npm/actions/docker) y `docker.yml` (GHCR, SBOM, provenance).
   - **Release:** `release.yml` reejecuta CI, compara el tag con `pyproject` y publica notas extraídas del CHANGELOG (`scripts/changelog_section.py`).
-  - **Reproducibilidad:** `pyproject` completo + `uv.lock`; `requirements.txt`/`requirements-dev.txt` exportados con hashes; `make lock`.
+  - **Reproducibilidad:** `pyproject` completo + `uv.lock` como única fuente; CI y Docker exportan los pins con hashes en el build (sin `requirements*.txt` versionados); `make lock`.
   - **Licencia/gobernanza:** `LICENSE` GPL-3.0 (DEC-016), `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, plantillas de issue/PR, badges y roadmap real en README.
   - **Protection:** `main` con PR + checks obligatorios, sin force-push ni borrado, `enforce_admins=false` (mantenedor único).
 - **Archivos tocados:** `.github/{workflows/{ci,codeql,docker,release}.yml,dependabot.yml,ISSUE_TEMPLATE/*,PULL_REQUEST_TEMPLATE.md}`, `scripts/changelog_section.py`, `backend/{pyproject.toml,uv.lock,requirements*.txt}`, `backend/tests/core/{test_workflows,test_versions,test_dependencies,test_changelog_section}.py`, `Makefile`, `README.md`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `docs/{CI,RELEASE}.md`, `decisions.md`, `plan.md`, `bitacora.md`.
 - **Verificación:**
   - `pytest tests/api tests/core -q` → **226 passed, 1 skipped** (incluye los 4 archivos de test nuevos).
   - `docker compose config` (prod/dev) → exit 0.
-  - CI en GitHub: runs `44801239036` y `44801604225` → **success** (backend ~32–40 s, frontend 52 s–2 min).
-  - **Limitación:** `docker build` no se pudo repetir localmente (Docker Desktop detenido); lo valida el workflow `docker.yml` en el próximo push.
+  - CI en GitHub: runs `44801239036` y `44801604225` → **success**; tras el push de 0.2.0, run `44806348488` → **success** (40 s), `CodeQL` `44806348261` → **success** y `Docker` `44806348666` → **success** (build + push a GHCR con SBOM/provenance).
+  - Imágenes verificadas con token anónimo: `ghcr.io/ferchoduque/nmap-custom-{backend,frontend}:main` y `:sha-8c55cc0` **públicas**.
+  - **Limitación:** `docker build` no se pudo repetir en local (Docker Desktop detenido); la construcción real la validó `docker.yml`.
 - **Hallazgos / riesgos / deuda:**
   - `python-nmap` es GPL-3.0: se eligió GPL-3.0 para no reescribir la integración; una licencia permisiva exigiría sustituirlo.
   - GHCR crea paquetes privados por defecto: hay que hacerlos públicos tras el primer push.

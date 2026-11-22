@@ -58,8 +58,8 @@ shell-db: ## Access PostgreSQL shell
 shell-redis: ## Access Redis CLI
 	docker compose exec redis redis-cli
 
-lock: ## Regenerate pinned requirements from uv.lock
-	cd backend && uv lock && uv export --frozen --no-dev --no-emit-project --format requirements-txt --no-header -o requirements.txt && uv export --frozen --extra dev --no-emit-project --format requirements-txt --no-header -o requirements-dev.txt
+lock: ## Regenerate the lockfile (uv.lock is the single source of truth)
+	cd backend && uv lock
 
 test: ## Run tests in backend container
 	docker compose exec backend pytest tests/ -v

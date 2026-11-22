@@ -32,9 +32,8 @@ misma URL para que el resultado no dependa del entorno del operador.
 `.github/workflows/ci.yml` se dispara en `push` a `main`, en `pull_request` y
 puede reutilizarse (`workflow_call`) desde el release:
 
-- **backend:** Python 3.11, `pip install -r backend/requirements-dev.txt`
-  (pins exactos generados desde `uv.lock`), pytest con `PYTHONPATH=.` y SQLite
-  en memoria.
+- **backend:** Python 3.11, `uv export --frozen --extra dev` desde `uv.lock`
+  (lockfile único, pins exactos) y pytest con `PYTHONPATH=.` y SQLite en memoria.
 - **frontend:** Node 20, `npm ci`, lint, typecheck, tests y build.
 - **compose config:** valida `docker-compose.yml` y `docker-compose.dev.yml`.
 
@@ -65,8 +64,8 @@ No se ejecutan escaneos de red, resolución DNS ni contenedores con capacidades.
 - Cobertura de backend aún no se mide en CI (`pytest-cov` está en dev; falta
   fijar umbral).
 - **El bundle usa code-splitting** (rutas lazy y chunks de vendor); el mayor chunk actual es ~241 kB. Si reaparece el aviso >500 kB, revisar imports estáticos pesados.
-- La primera ejecución local requiere dependencias instaladas (`pip install -r
-  backend/requirements-dev.txt`, `npm ci`).
+- La primera ejecución local requiere dependencias instaladas (`uv sync --extra
+  dev` en `backend/`, `npm ci` en `frontend/`).
 
 ## Solución de problemas
 
