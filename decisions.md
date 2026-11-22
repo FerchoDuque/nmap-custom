@@ -285,7 +285,7 @@
 - **Decisión:**
   - **Licencia GPL-3.0.** `python-nmap` es GPL-3.0 (PyPI) y se importa en `os_fingerprint.py`, por lo que distribuir el proyecto como obra combinada bajo licencia permisiva exigiría sustituirlo (p. ej. `subprocess` + parseo XML propio). `nmap` se ejecuta como binario separado (GPLv2, agregación). Se documenta en README y se registra aquí.
   - **`main` protegido:** PR obligatorio, checks `Backend tests`, `Frontend checks` y `Compose config` en verde, sin force-push ni borrado de rama. `enforce_admins=false` para no bloquear al único mantenedor (bypass explícito y reversible).
-  - **Lockfile único:** `backend/pyproject.toml` + `uv.lock`; `requirements.txt` (runtime) y `requirements-dev.txt` se generan con `uv export --frozen` con hashes y se consumen en Docker/CI. `make lock` regenera.
+  - **Lockfile único:** `backend/pyproject.toml` + `uv.lock`; CI y Docker derivan los pins en el build con `uv export --frozen` (con hashes), sin `requirements*.txt` versionados que puedan desincronizarse. `make lock` regenera el lock.
   - **Cadena de suministro:** Dependabot (pip, npm, actions, docker), CodeQL `security-extended` (Python y JS/TS), imágenes en GHCR con SBOM y provenance, y release automática desde el tag validando versión ↔ CHANGELOG.
 - **Alternativas consideradas:** MIT/Apache-2.0 (descartada: obliga a reescribir la integración con nmap); sin protección de rama (descartada: el CI roto pasó desapercibido); `pip-compile` (descartada: `uv` ya está disponible y resuelve más rápido).
 - **Consecuencias:**

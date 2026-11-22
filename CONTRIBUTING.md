@@ -18,8 +18,9 @@ cd backend
 python -m venv .venv
 . .venv/Scripts/activate        # Windows
 # source .venv/bin/activate     # Linux/macOS
-pip install -r requirements-dev.txt
-PYTHONPATH=. DATABASE_URL=sqlite:///:memory: pytest tests/api tests/core -q
+python -m pip install uv==0.10.9
+uv sync --extra dev
+uv run pytest tests/api tests/core -q
 
 # Frontend
 cd frontend

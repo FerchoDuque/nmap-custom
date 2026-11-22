@@ -105,9 +105,10 @@ venv\Scripts\activate  # Windows
 source venv/bin/activate  # Linux/Mac
 ```
 
-3. Install dependencies:
+3. Install dependencies (lockfile único `uv.lock`):
 ```bash
-pip install -r requirements.txt
+pip install uv==0.10.9
+uv sync --extra dev
 ```
 
 4. Configure environment:
@@ -185,7 +186,7 @@ nmap-custom/
 │   │   ├── tasks.py         # Celery tasks
 │   │   └── config.py        # Configuration
 │   ├── tests/               # Backend tests
-│   └── requirements.txt
+│   └── uv.lock              # Lockfile (fuente de verdad de dependencias)
 ├── frontend/                # React/TypeScript frontend
 │   ├── src/
 │   │   ├── components/      # React components
