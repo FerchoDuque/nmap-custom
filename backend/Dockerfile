@@ -11,11 +11,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set working directory
 WORKDIR /app
 
-# Copy requirements
-COPY requirements.txt .
+# Install uv (pinned to the version that generated uv.lock)
+RUN pip install --no-cache-dir uv==0.10.9
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Export exact pins from the lockfile and install them
+COPY pyproject.toml uv.lock ./
+RUN uv export --frozen --no-dev --no-emit-project --format requirements-txt \
+        --no-header -o /tmp/requirements.txt \
+    && pip install --no-cache-dir --user -r /tmp/requirements.txt
 
 # Runtime stage
 FROM python:3.11-slim
