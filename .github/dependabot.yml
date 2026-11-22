@@ -7,6 +7,7 @@ updates:
       day: "monday"
       time: "06:00"
     open-pull-requests-limit: 5
+    rebase-strategy: "auto"
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -21,6 +22,7 @@ updates:
       day: "monday"
       time: "06:00"
     open-pull-requests-limit: 5
+    rebase-strategy: "auto"
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -44,6 +46,7 @@ updates:
     directory: "/backend"
     schedule:
       interval: "monthly"
+    rebase-strategy: "auto"
     commit-message:
       prefix: "chore(deps)"
 
@@ -51,5 +54,6 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "monthly"
+    rebase-strategy: "auto"
     commit-message:
       prefix: "chore(deps)"
