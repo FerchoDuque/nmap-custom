@@ -37,3 +37,27 @@ def test_workflow_steps_declare_a_command(path):
             assert "uses" in step or "run" in step, (
                 f"{path.name}:{job_name} step {index} has neither `uses` nor `run`"
             )
+
+
+def _load(name: str) -> dict:
+    return yaml.safe_load((REPO_ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"))
+
+
+def test_release_workflow_does_not_grant_write_to_the_called_ci():
+    """Only the job publishing the release may write repository contents.
+
+    A workflow-level `contents: write` leaks that permission into the whole
+    `ci` job (and any action it runs), which is unnecessary attack surface.
+    """
+    document = _load("release.yml")
+
+    assert document["permissions"]["contents"] == "read"
+    assert document["jobs"]["ci"]["permissions"]["contents"] == "read"
+    assert document["jobs"]["release"]["permissions"]["contents"] == "write"
+
+
+def test_docker_workflow_can_push_but_not_write_source():
+    document = _load("docker.yml")
+
+    assert document["permissions"]["packages"] == "write"
+    assert document["permissions"]["contents"] == "read"
