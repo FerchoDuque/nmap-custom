@@ -4,6 +4,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y versionado [SemVer](https://semver.org/lang/es/). El procedimiento de release y
 el checklist están en [`docs/RELEASE.md`](docs/RELEASE.md).
 
+## [Unreleased]
+
+### Added
+
+- Migraciones versionadas con Alembic (`backend/migrations/`), baseline `0001`
+  equivalente al esquema de 0.1.0 y adopción automática de bases creadas con
+  `create_all` (`stamp 0001` + `upgrade head`).
+- Backup y restore (`python -m app.core.backup`): SQLite con la API online de
+  `sqlite3`, PostgreSQL con `pg_dump`/`pg_restore` y `PGPASSWORD` fuera de
+  `argv`.
+- Retención de datos (`DATA_RETENTION_DAYS`, por defecto 30 días) con tarea
+  diaria de Celery Beat; nunca purga scans `pending`/`running`.
+
+### Changed
+
+- El contenedor `backend` aplica migraciones en el entrypoint; el `create_all`
+  de arranque queda limitado a desarrollo/tests (`AUTO_CREATE_SCHEMA`).
+
 ## [0.1.0] — 2026-11-14
 
 ### Added

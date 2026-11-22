@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"
 
+    # Schema and data lifecycle
+    # `create_all` is kept for tests/local dev; production images run Alembic
+    # in the entrypoint and set AUTO_CREATE_SCHEMA=false.
+    auto_create_schema: bool = True
+    # Delete finished scans older than this many days; 0 disables retention.
+    data_retention_days: int = 30
+
     @field_validator("log_level", mode="before")
     @classmethod
     def validate_log_level(cls, value: str) -> str:
@@ -85,6 +92,13 @@ class Settings(BaseSettings):
     def validate_positive(cls, value: int) -> int:
         if value < 1:
             raise ValueError("must be a positive integer")
+        return value
+
+    @field_validator("data_retention_days")
+    @classmethod
+    def validate_retention_days(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("DATA_RETENTION_DAYS cannot be negative")
         return value
 
     @property
