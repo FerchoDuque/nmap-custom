@@ -109,12 +109,15 @@ Eventos útiles: `scan.started`, `scan.completed`, `scan.failed`, `scan.timeout`
 ### 4.7 Base de datos y migraciones
 
 ```bash
-make migrate                 # aplicar migraciones dentro del backend
-make shell-db                # psql
-docker-compose exec backend alembic current
+docker compose exec backend python -m app.core.db_migrations   # upgrade a head
+docker compose exec backend alembic current                    # revisión aplicada
+make shell-db                                                  # psql
 ```
 
-Backup/restore: ver la sección **Backup & Restore** de [`DOCKER.md`](DOCKER.md).
+El arranque del contenedor `backend` ya aplica las migraciones. Una base creada
+por 0.1.0 se adopta automáticamente (`stamp 0001` + `upgrade head`).
+
+Backup, restore y retención: ver [`DATA.md`](DATA.md).
 
 ## 5. Configuración crítica
 
@@ -128,6 +131,8 @@ Backup/restore: ver la sección **Backup & Restore** de [`DOCKER.md`](DOCKER.md)
 | `DEFAULT_SCAN_TIMEOUT` | `300` | Presupuesto por scan (segundos) |
 | `LOG_LEVEL` | `INFO` | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL`; inválido impide arrancar |
 | `RESOLVE_HOSTNAMES` | `true` | DNS inverso; desactivar sin DNS |
+| `AUTO_CREATE_SCHEMA` | `true` (dev) | `false` en contenedores: el esquema lo gestiona Alembic |
+| `DATA_RETENTION_DAYS` | `30` | Días antes de purgar scans terminados; `0` desactiva |
 
 ## 6. Seguridad operativa
 

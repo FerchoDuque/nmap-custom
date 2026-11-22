@@ -39,9 +39,9 @@ END
 
 echo "PostgreSQL is ready - executing command"
 
-# Run database migrations
-echo "Running database migrations..."
-python -c "from app.database import init_db; init_db()" || echo "Database initialization complete"
+# Apply Alembic migrations (adopts databases created by 0.1.0's create_all)
+echo "Applying database migrations..."
+python -m app.core.db_migrations
 
 # Execute the main command
 exec "$@"

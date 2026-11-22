@@ -300,15 +300,20 @@ services:
 
 ## Backup & Restore
 
-### Backup Database
+Usa el helper del proyecto (formato custom, credenciales fuera de `argv`):
+
 ```bash
-docker-compose exec db pg_dump -U scanner network_scanner > backup.sql
+# Backup (dentro del contenedor backend)
+docker compose exec backend python -m app.core.backup backup --output /tmp/app.dump
+docker compose cp backend:/tmp/app.dump ./backups/app.dump
+
+# Restore (reemplaza los objetos existentes)
+docker compose cp ./backups/app.dump backend:/tmp/app.dump
+docker compose exec backend python -m app.core.backup restore --input /tmp/app.dump
 ```
 
-### Restore Database
-```bash
-cat backup.sql | docker-compose exec -T db psql -U scanner network_scanner
-```
+Equivalente manual con `pg_dump`/`pg_restore` y `PGPASSWORD` en el entorno; no
+pases la contraseña en la línea de comandos. Detalle en [`DATA.md`](DATA.md).
 
 ## Monitoring
 

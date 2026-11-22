@@ -29,6 +29,32 @@
 
 ---
 
+## 2026-11-21 — Backend/Infra (PLAN-062: migraciones, backup/restore y retención)
+
+- **Objetivo (Plan ID):** PLAN-062 — esquema versionado, backups probados y política de retención.
+- **Contexto/insumos:** no existía `alembic/`; el esquema se creaba con `create_all()` y no había camino de upgrade. `backend/alembic/` era un directorio vacío que eclipsaba el paquete instalado.
+- **Acciones realizadas:**
+  - **Alembic:** `backend/alembic.ini` y `backend/migrations/` (`env.py`, `script.py.mako`, baseline `0001`). El directorio se llama `migrations/` para no eclipsar el paquete `alembic` al ejecutar Python desde `backend/`.
+  - **Adopción:** `app.core.db_migrations` clasifica la base en `empty`/`legacy`/`managed`; una base de 0.1.0 se adopta con `stamp 0001` + `upgrade head` sin recrear datos.
+  - **Despliegue:** el entrypoint ejecuta `python -m app.core.db_migrations`; `AUTO_CREATE_SCHEMA=false` en prod (compose y `.env.docker`) y `create_all` solo en dev/tests.
+  - **Backup/restore:** `app.core.backup` (SQLite con API online; PostgreSQL con `pg_dump`/`pg_restore`, contraseña en `PGPASSWORD`, nunca en `argv`).
+  - **Retención:** `app.core.retention` + `purge_expired_scans_task` diaria en Beat; solo estados terminales, hijos borrados explícitamente para SQLite.
+  - **Dependabot:** auto-merge activado; mergeados #3 (actions), #6 (jest-dom), #8 (zustand 5), #11 (uvicorn), #12 (setuptools). Cerrados con justificación #1/#2/#4/#5/#7 (PLAN-067: runtimes LTS y migración coordinada eslint 9/React 19).
+- **Archivos tocados:** `backend/{alembic.ini,migrations/**,app/core/{db_migrations,backup,retention}.py,app/{config,main,tasks,celery_app}.py,docker-entrypoint.sh,.env.example}`, `backend/tests/core/test_{migrations,backup,retention}.py`, `docker-compose.yml`, `.env.docker`, `docs/{DATA,DOCKER,RUNBOOK,RELEASE}.md`, `README.md`, `CHANGELOG.md`, `plan.md`, `.github/dependabot.yml`.
+- **Verificación:**
+  - `pytest tests/api tests/core -q` → **249 passed, 1 skipped**.
+  - Nuevos: `test_migrations.py` (9), `test_backup.py` (9), `test_retention.py` (6).
+  - `scripts/verify.ps1` → **All checks passed** (backend 249+1, frontend 67, lint/typecheck/build OK).
+  - `docker compose config` (prod/dev) → exit 0.
+  - `alembic upgrade head --sql` con dialecto PostgreSQL → DDL generado correctamente.
+  - **Limitación:** `docker build`/stack no re-ejecutados (Docker Desktop detenido); la imagen la valida `docker.yml` en CI.
+- **Hallazgos / riesgos / deuda:**
+  - `stamp 0001` asume que una base legacy coincide con el baseline; una base modificada a mano debe revisarse antes de adoptarla.
+  - `celery`/`beat` arrancan en paralelo al `backend`: hay una ventana de segundos hasta que las migraciones terminan.
+  - Los PRs de Dependabot con peers incompatibles no se pueden mergear en bloque; requieren una migración coordinada (PLAN-067).
+- **Decisiones:** ninguna nueva; se mantiene DEC-016 (lockfile único, GPL-3.0). PLAN-067 registrado en `plan.md`.
+- **Siguiente paso:** PLAN-063 (usuarios/API tokens, RBAC y audit log).
+
 ## 2026-11-20 — Infra/Docs (PLAN-060/061: madurez de repositorio, licencia y cadena de suministro)
 
 - **Objetivo (Plan ID):** PLAN-060 (CI/CD y cadena de suministro) y PLAN-061 (licencia, gobernanza y metadatos).

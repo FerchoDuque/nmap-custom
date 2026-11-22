@@ -318,6 +318,7 @@ vulnerabilities privately following [`SECURITY.md`](SECURITY.md).
 | [`docs/CONTRACT.md`](docs/CONTRACT.md) | Contrato REST/WS v1.0, validación, errores y operación |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Operación, diagnóstico por síntoma y recuperación |
 | [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md) | Logs JSON, health y métricas |
+| [`docs/DATA.md`](docs/DATA.md) | Migraciones Alembic, backup/restore y retención |
 | [`docs/RELEASE.md`](docs/RELEASE.md) | Checklist de release, smoke tests y rollback |
 | [`docs/CI.md`](docs/CI.md) | Verificación local y GitHub Actions |
 | [`docs/DOCKER.md`](docs/DOCKER.md) | Contenedores, capacidades, backups y troubleshooting |

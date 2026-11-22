@@ -58,9 +58,13 @@ async def startup_event():
     """Initialize application on startup"""
     logger.info("Starting Network Scanner API...")
     
-    # Initialize database
-    init_db()
-    logger.info("Database initialized")
+    # Local dev/tests may create the schema directly; production images run
+    # `alembic upgrade head` in the entrypoint and set AUTO_CREATE_SCHEMA=false.
+    if settings.auto_create_schema:
+        init_db()
+        logger.info("Database schema ensured with create_all (development)")
+    else:
+        logger.info("Database schema is managed by Alembic")
     
     # Display disclaimer
     logger.info("=" * 80)
