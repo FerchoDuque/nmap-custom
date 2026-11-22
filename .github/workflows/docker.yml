@@ -36,7 +36,7 @@ jobs:
             context: ./frontend
             file: ./frontend/Dockerfile
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Normalize GHCR owner
         id: owner
